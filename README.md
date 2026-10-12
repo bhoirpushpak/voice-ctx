@@ -1,4 +1,4 @@
-# Voice CTX — Voice Change Transform Xpress
+# Voice CTX - Voice Change Transform Xpress
 
 **A free, real-time voice changer for Windows.** Voice CTX takes your microphone, cleans it up,
 changes your voice and sends the result to a virtual microphone. Discord, games, OBS, Zoom or
