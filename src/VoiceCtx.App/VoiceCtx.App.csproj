@@ -14,6 +14,12 @@
     <Product>Voice CTX</Product>
   </PropertyGroup>
 
+  <!-- `dotnet publish -p:PublishSingleFile=true`: one compressed exe, WPF native libraries included. -->
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Only the tray icon uses WinForms; keep its namespaces out of the global usings. -->
     <Using Remove="System.Windows.Forms" />

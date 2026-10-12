@@ -32,6 +32,9 @@ internal sealed class OutputSink
         _scratch = new float[StreamResampler.MaxOutputLength(maxInputBlock, _nominalStep * (1 - MaxCorrection)) + 8];
     }
 
+    /// <summary>Samples currently queued (approximate when read off the audio threads).</summary>
+    public int Fill => _ring.Count;
+
     /// <summary>Producer (capture thread).</summary>
     public void Push(ReadOnlySpan<float> input)
     {

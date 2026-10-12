@@ -1,0 +1,6 @@
+<Project>
+  <!-- Keep single-file publishes to exactly one file: embed symbols in every assembly. -->
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+</Project>
