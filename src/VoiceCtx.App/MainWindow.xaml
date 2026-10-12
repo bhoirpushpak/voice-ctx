@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:VoiceCtx.App.ViewModels"
         xmlns:app="clr-namespace:VoiceCtx.App"
-        Title="Voice CTX — Voice Change Transform Xpress" Width="920" Height="840" MinWidth="780" MinHeight="780"
+        Title="Voice CTX - Voice Change Transform Xpress" Width="920" Height="840" MinWidth="780" MinHeight="780"
         Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13"
         WindowStartupLocation="CenterScreen" Icon="Assets/VoiceCtx.ico">
     <Window.Resources>

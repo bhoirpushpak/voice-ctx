@@ -46,7 +46,7 @@ public sealed class TrayIcon : IDisposable
     {
         _notifyIcon.Icon = isOn ? _onIcon : _offIcon;
         _toggleItem.Checked = isOn;
-        string text = $"Voice CTX — {(isOn ? effectName : "Off")}";
+        string text = $"Voice CTX - {(isOn ? effectName : "Off")}";
         _notifyIcon.Text = text.Length > 63 ? text[..63] : text;
     }
 
