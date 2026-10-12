@@ -20,6 +20,9 @@ public sealed class AppSettings
     public double NoiseReduction { get; set; } = 100;
     public bool StudioSound { get; set; }
     public double StudioStrength { get; set; } = 70;
+    public bool AiVoiceEnabled { get; set; }
+    public string? AiVoiceId { get; set; }
+    public double AiVoicePitchShift { get; set; }
 }
 
 /// <summary>Loads and saves <see cref="AppSettings"/> as JSON (default: %AppData%\VoiceCtx\settings.json).</summary>
@@ -49,6 +52,7 @@ public sealed class SettingsStore(string path)
             settings.Mix = Math.Clamp(settings.Mix, 0, 100);
             settings.NoiseReduction = Math.Clamp(settings.NoiseReduction, 0, 100);
             settings.StudioStrength = Math.Clamp(settings.StudioStrength, 0, 100);
+            settings.AiVoicePitchShift = Math.Clamp(settings.AiVoicePitchShift, -12, 12);
             return settings;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or NotSupportedException)

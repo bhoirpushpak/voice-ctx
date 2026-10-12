@@ -35,4 +35,9 @@
     <ProjectReference Include="..\VoiceCtx.Audio\VoiceCtx.Audio.csproj" />
   </ItemGroup>
 
+  <!-- ONNX Runtime's NuGet package ships its import library next to the DLL; it is build-time only. -->
+  <Target Name="RemoveOnnxRuntimeImportLib" AfterTargets="Publish">
+    <Delete Files="$(PublishDir)onnxruntime.lib" />
+  </Target>
+
 </Project>

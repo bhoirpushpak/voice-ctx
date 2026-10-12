@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:VoiceCtx.App.ViewModels"
         xmlns:app="clr-namespace:VoiceCtx.App"
-        Title="Voice CTX" Width="920" Height="840" MinWidth="780" MinHeight="780"
+        Title="Voice CTX — Voice Change Transform Xpress" Width="920" Height="840" MinWidth="780" MinHeight="780"
         Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13"
         WindowStartupLocation="CenterScreen" Icon="Assets/VoiceCtx.ico">
     <Window.Resources>
@@ -26,7 +26,7 @@
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="Voice CTX" FontSize="26" FontWeight="Bold" />
                 <TextBlock Style="{StaticResource Caption}" Margin="0"
-                           Text="Use “CABLE Output” as your mic in Discord, games or OBS · Ctrl+Alt+V effect on/off · Ctrl+Alt+N noise cancellation" />
+                           Text="Use “CABLE Output” as your mic in Discord, games or OBS · Ctrl+Alt+V effects · Ctrl+Alt+N noise cancel · Ctrl+Alt+A AI voice" />
             </StackPanel>
         </DockPanel>
 
@@ -109,49 +109,124 @@
             </StackPanel>
 
             <Border Grid.Column="2" Style="{StaticResource Card}">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionTitle}" Text="Voice effect" Margin="4,0,0,6" />
-                    <Grid DockPanel.Dock="Bottom" Margin="4,12,4,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="24" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding CustomSemitonesText}" />
-                                <TextBlock Style="{StaticResource Caption}" Text="Custom pitch" />
+                <TabControl>
+                    <TabItem Header="Voice effects">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Bottom" Margin="4,12,4,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding CustomSemitonesText}" />
+                                        <TextBlock Style="{StaticResource Caption}" Text="Custom pitch" />
+                                    </DockPanel>
+                                    <Slider Minimum="-12" Maximum="12" Value="{Binding CustomSemitones}"
+                                            IsSnapToTickEnabled="True" TickFrequency="1" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding Mix, StringFormat={}{0:0}%}" />
+                                        <TextBlock Style="{StaticResource Caption}" Text="Effect strength (dry / wet)" />
+                                    </DockPanel>
+                                    <Slider Minimum="0" Maximum="100" Value="{Binding Mix}" />
+                                </StackPanel>
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding Effects}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="3" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:EffectOption}">
+                                        <RadioButton Style="{StaticResource EffectTile}" GroupName="Effects"
+                                                     IsChecked="{Binding IsSelected, Mode=TwoWay}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </RadioButton>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                    </TabItem>
+
+                    <TabItem Header="AI Voice" DataContext="{Binding AiVoice}">
+                        <DockPanel>
+                            <!-- Header: what it is + on/off -->
+                            <DockPanel DockPanel.Dock="Top" Margin="4,0,0,12">
+                                <ToggleButton DockPanel.Dock="Right" Style="{StaticResource PowerToggle}"
+                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}" IsEnabled="{Binding ModelsInstalled}"
+                                              ToolTip="Turn AI Voice on or off (Ctrl+Alt+A)" />
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Style="{StaticResource SectionTitle}" Text="Sound like someone else" Margin="0,0,0,2" />
+                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0"
+                                               Text="Real-time AI voice conversion. Your words and timing stay yours; the voice changes. Works with any language. Voice effects still apply on top." />
+                                </StackPanel>
                             </DockPanel>
-                            <Slider Minimum="-12" Maximum="12" Value="{Binding CustomSemitones}"
-                                    IsSnapToTickEnabled="True" TickFrequency="1" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding Mix, StringFormat={}{0:0}%}" />
-                                <TextBlock Style="{StaticResource Caption}" Text="Effect strength (dry / wet)" />
-                            </DockPanel>
-                            <Slider Minimum="0" Maximum="100" Value="{Binding Mix}" />
-                        </StackPanel>
-                    </Grid>
-                    <ItemsControl ItemsSource="{Binding Effects}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="3" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:EffectOption}">
-                                <RadioButton Style="{StaticResource EffectTile}" GroupName="Effects"
-                                             IsChecked="{Binding IsSelected, Mode=TwoWay}">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
-                                    </StackPanel>
-                                </RadioButton>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </DockPanel>
+
+                            <!-- Footer: notice, actions, status -->
+                            <StackPanel DockPanel.Dock="Bottom" Margin="4,12,4,0">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding PitchShiftText}" />
+                                    <TextBlock Style="{StaticResource Caption}" Text="Pitch shift (tip: +12 when a male speaker uses a female voice, −12 the other way)" />
+                                </DockPanel>
+                                <Slider Minimum="-12" Maximum="12" Value="{Binding PitchShift}" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Button Style="{StaticResource ActionButton}" Content="Import voice…" Command="{Binding ImportCommand}" />
+                                    <Button Style="{StaticResource ActionButton}" Content="Open voices folder" Command="{Binding OpenFolderCommand}" />
+                                    <Button Style="{StaticResource ActionButton}" Content="Refresh" Command="{Binding RefreshCommand}" />
+                                    <Button Style="{StaticResource ActionButton}" Content="Credits" Command="{Binding OpenCreditsCommand}" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding ImportError}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Text="{Binding Notice}" Margin="0,0,0,8" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse x:Name="AiDot" Width="9" Height="9" VerticalAlignment="Center" Fill="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Margin="8,0,0,0" Foreground="{StaticResource MutedTextBrush}" Text="{Binding Status}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Models missing -->
+                            <Border DockPanel.Dock="Top" Margin="4,0,4,12" Padding="14,10" CornerRadius="8"
+                                    Background="#33F2A93B" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
+                                    Visibility="{Binding ShowInstallHelp, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="SemiBold" Text="AI Voice models aren't installed yet." />
+                                    <Run Text="They're large (~800 MB) so they aren't part of the app. Build them once with tools/aivoice/build_models.py (see the README), or copy a prepared model folder to:" />
+                                    <LineBreak />
+                                    <Run Text="{Binding ModelFolder, Mode=OneWay}" FontFamily="Consolas" />
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Voice list -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Voices}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="2" VerticalAlignment="Top" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:AiVoiceOption}">
+                                            <RadioButton Style="{StaticResource EffectTile}" GroupName="AiVoices"
+                                                         IsChecked="{Binding IsSelected, Mode=TwoWay}" ToolTip="{Binding Credits}">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
             </Border>
         </Grid>
 

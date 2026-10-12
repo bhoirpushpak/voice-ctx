@@ -33,10 +33,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private EngineState _engineState;
     private string? _hotkeyWarning;
 
-    public MainViewModel(DeviceService devices, AudioEngine engine)
+    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice)
     {
         _devices = devices;
         _engine = engine;
+        AiVoice = aiVoice;
+        AiVoice.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
         _dispatcher = Dispatcher.CurrentDispatcher;
         Effects = EffectOption.CreateCatalog(SelectEffect);
         OpenCableSiteCommand = new RelayCommand(() =>
@@ -50,6 +52,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Raised whenever a user-facing setting changes (used for persistence).</summary>
     public event EventHandler? SettingsChanged;
+
+    /// <summary>The separate AI Voice feature (its own tab).</summary>
+    public AiVoiceViewModel AiVoice { get; }
 
     public ObservableCollection<AudioDeviceInfo> Inputs { get; } = [];
     public ObservableCollection<AudioDeviceInfo> Outputs { get; } = [];
@@ -241,6 +246,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                      nameof(NoiseCancel), nameof(NoiseReduction), nameof(StudioSound), nameof(StudioStrength) })
             OnPropertyChanged(name);
 
+        AiVoice.Initialize(settings.AiVoiceEnabled, settings.AiVoiceId, settings.AiVoicePitchShift);
+
         await RefreshDevicesAsync();
         _meterTimer.Start();
         RestartEngine();
@@ -261,6 +268,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         NoiseReduction = NoiseReduction,
         StudioSound = StudioSound,
         StudioStrength = StudioStrength,
+        AiVoiceEnabled = AiVoice.IsEnabled,
+        AiVoiceId = AiVoice.SelectedVoiceId,
+        AiVoicePitchShift = AiVoice.PitchShift,
     };
 
     /// <summary>Shown in the status line when the global hotkey could not be registered.</summary>
@@ -348,5 +358,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static double ToMeter(float peak) =>
         Math.Clamp((20 * Math.Log10(Math.Max(peak, 1e-6)) + 60) / 60, 0, 1);
 
-    public void Dispose() => _meterTimer.Stop();
+    public void Dispose()
+    {
+        _meterTimer.Stop();
+        AiVoice.Dispose();
+    }
 }

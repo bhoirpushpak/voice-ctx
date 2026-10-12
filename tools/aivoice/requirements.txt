@@ -1,0 +1,8 @@
+# Model build tooling for Voice CTX AI Voice (not needed to run the app).
+# Install into a virtual environment; CUDA is optional (export runs on CPU).
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1
+numpy==1.26.4
+scipy==1.14.1
+onnx==1.17.0
+transformers==4.46.3

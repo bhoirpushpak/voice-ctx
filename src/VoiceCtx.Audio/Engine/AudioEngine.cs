@@ -1,4 +1,5 @@
 using NAudio.CoreAudioApi;
+using VoiceCtx.Audio.AiVoice;
 using VoiceCtx.Audio.Effects;
 using VoiceCtx.Audio.Enhancement;
 
@@ -22,6 +23,7 @@ public sealed class AudioEngine : IDisposable
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
 
     private readonly DeviceService _devices;
+    private readonly AiVoiceService? _aiVoiceService;
     private readonly SemaphoreSlim _rebuildGate = new(1, 1);
     private readonly object _stateLock = new();
     private EngineConfig? _desired;
@@ -31,11 +33,21 @@ public sealed class AudioEngine : IDisposable
     private volatile float _inputLevel;
     private bool _disposed;
 
-    public AudioEngine(DeviceService devices)
+    public AudioEngine(DeviceService devices, AiVoiceService? aiVoice = null)
     {
         _devices = devices;
+        _aiVoiceService = aiVoice;
         _devices.DevicesChanged += OnDevicesChanged;
     }
+
+    /// <summary>AI Voice on/off and pitch shift; applied after mic enhancement, before voice effects.</summary>
+    public AiVoiceControls AiVoice { get; } = new();
+
+    /// <summary>Added delay of the AI Voice path in the current pipeline (0 when unavailable).</summary>
+    public double AiVoiceLatencyMs => _pipeline?.AiVoice?.LatencyMs ?? 0;
+
+    /// <summary>True while AI Voice has fallen back to the normal voice because inference is too slow.</summary>
+    public bool AiVoiceFallingBehind => _pipeline?.AiVoice?.IsFallingBehind ?? false;
 
     public event EventHandler? StateChanged;
 
@@ -155,6 +167,7 @@ public sealed class AudioEngine : IDisposable
         _inputLevel = Math.Max(Math.Min(peak, 1f), _inputLevel * decay);
 
         pipeline.Enhancer.Process(block);
+        pipeline.AiVoice?.Process(block);
         pipeline.Effects.Process(block);
 
         float volume = _masterVolume;
@@ -195,6 +208,7 @@ public sealed class AudioEngine : IDisposable
         public int InputRate { get; private set; }
         public EffectProcessor Effects { get; private set; } = null!;
         public MicEnhancer Enhancer { get; private set; } = null!;
+        public AiVoiceStage? AiVoice { get; private set; }
         public OutputSink Output { get; private set; } = null!;
         public OutputSink? Monitor { get; private set; }
 
@@ -230,6 +244,8 @@ public sealed class AudioEngine : IDisposable
                 pipeline._capture = new WasapiCaptureStream(input, CaptureBufferMs, block => engine.ProcessCaptured(block, pipeline));
                 pipeline.InputRate = pipeline._capture.Format.SampleRate;
                 pipeline.Enhancer = new MicEnhancer(pipeline.InputRate, pipeline._capture.BufferFrames, engine.Enhancement);
+                if (engine._aiVoiceService != null)
+                    pipeline.AiVoice = new AiVoiceStage(pipeline.InputRate, pipeline._capture.BufferFrames, engine.AiVoice, engine._aiVoiceService);
                 pipeline.Effects = new EffectProcessor(pipeline.InputRate, pipeline._capture.BufferFrames, engine.Effects);
                 pipeline._output = new WasapiRenderStream(output, RenderBufferMs, mono => pipeline.Output.Pull(mono));
                 pipeline.Output = CreateSink(pipeline._capture, pipeline._output);
@@ -305,6 +321,7 @@ public sealed class AudioEngine : IDisposable
             foreach (var stream in Streams()) stream.Dispose();
             // Streams join their audio threads above, so native denoiser state is no longer in use.
             Enhancer?.Dispose();
+            AiVoice?.Dispose();
         }
     }
 }

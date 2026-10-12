@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using VoiceCtx.App.Services;
 using VoiceCtx.App.ViewModels;
+using VoiceCtx.Audio.AiVoice;
 using VoiceCtx.Audio.Engine;
 
 namespace VoiceCtx.App;
@@ -19,6 +20,8 @@ public partial class App : Application
     private TrayIcon? _tray;
     private GlobalHotkey? _hotkey;
     private GlobalHotkey? _noiseHotkey;
+    private GlobalHotkey? _aiVoiceHotkey;
+    private AiVoiceService? _aiVoice;
     private DispatcherTimer? _saveTimer;
     private bool _exiting;
 
@@ -38,8 +41,9 @@ public partial class App : Application
 
         _settings = new SettingsStore(SettingsStore.DefaultPath);
         _devices = new DeviceService();
-        _engine = new AudioEngine(_devices);
-        _viewModel = new MainViewModel(_devices, _engine);
+        _aiVoice = new AiVoiceService(new VoiceLibrary(VoiceLibrary.DefaultRoot));
+        _engine = new AudioEngine(_devices, _aiVoice);
+        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine));
 
         _window = new MainWindow { DataContext = _viewModel };
         _window.Closing += OnWindowClosing;
@@ -51,7 +55,8 @@ public partial class App : Application
 
         _hotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.V, _viewModel.Toggle);
         _noiseHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.N, _viewModel.ToggleNoiseCancel);
-        var taken = new[] { _hotkey, _noiseHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
+        _aiVoiceHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.A, _viewModel.AiVoice.Toggle);
+        var taken = new[] { _hotkey, _noiseHotkey, _aiVoiceHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
         if (taken.Count > 0)
             _viewModel.HotkeyWarning = $"{string.Join(" and ", taken)} {(taken.Count == 1 ? "is" : "are")} used by another app, so that hotkey is unavailable.";
 
@@ -115,9 +120,11 @@ public partial class App : Application
     {
         _hotkey?.Dispose();
         _noiseHotkey?.Dispose();
+        _aiVoiceHotkey?.Dispose();
         _tray?.Dispose();
         _viewModel?.Dispose();
         _engine?.Dispose();
+        _aiVoice?.Dispose();
         _devices?.Dispose();
         _instance?.Dispose();
         base.OnExit(e);
