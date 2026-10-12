@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Threading;
+using VoiceCtx.App.Services;
 using VoiceCtx.Audio.Effects;
 using VoiceCtx.Audio.Engine;
 
@@ -29,6 +30,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private double _inputLevel;
     private string _status = "Starting…";
     private EngineState _engineState;
+    private string? _hotkeyWarning;
 
     public MainViewModel(DeviceService devices, AudioEngine engine)
     {
@@ -164,19 +166,46 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string? PreferredOutputId => _preferredOutputId;
     public string? PreferredMonitorId => _preferredMonitorId;
 
-    /// <summary>Applies saved preferences, loads devices and starts audio.</summary>
-    public async Task InitializeAsync(string? inputId, string? outputId, string? monitorId, bool monitorEnabled)
+    public string EffectDisplayName => Effects.First(e => e.Kind == SelectedEffect).Title;
+
+    /// <summary>Applies saved settings, loads devices and starts audio.</summary>
+    public async Task InitializeAsync(AppSettings settings)
     {
-        _preferredInputId = inputId;
-        _preferredOutputId = outputId;
-        _preferredMonitorId = monitorId;
-        _monitorEnabled = monitorEnabled;
-        OnPropertyChanged(nameof(MonitorEnabled));
-        foreach (var option in Effects) option.SetSelected(option.Kind == _engine.Effects.Effect);
+        _preferredInputId = settings.InputDeviceId;
+        _preferredOutputId = settings.OutputDeviceId;
+        _preferredMonitorId = settings.MonitorDeviceId;
+        _monitorEnabled = settings.MonitorEnabled;
+        _engine.Effects.Enabled = settings.IsOn;
+        _engine.Effects.CustomSemitones = (float)settings.CustomSemitones;
+        _engine.Effects.Mix = (float)(settings.Mix / 100);
+        _engine.MasterVolume = (float)(settings.MasterVolume / 100);
+        ApplyEffect(settings.Effect);
+        foreach (var name in new[] { nameof(MonitorEnabled), nameof(IsOn), nameof(CustomSemitones), nameof(CustomSemitonesText), nameof(Mix), nameof(MasterVolume) })
+            OnPropertyChanged(name);
 
         await RefreshDevicesAsync();
         _meterTimer.Start();
         RestartEngine();
+    }
+
+    public AppSettings ToSettings() => new()
+    {
+        InputDeviceId = _preferredInputId,
+        OutputDeviceId = _preferredOutputId,
+        MonitorDeviceId = _preferredMonitorId,
+        MonitorEnabled = _monitorEnabled,
+        Effect = _engine.Effects.Effect,
+        IsOn = _engine.Effects.Enabled,
+        CustomSemitones = _engine.Effects.CustomSemitones,
+        MasterVolume = MasterVolume,
+        Mix = Mix,
+    };
+
+    /// <summary>Shown in the status line when the global hotkey could not be registered.</summary>
+    public string? HotkeyWarning
+    {
+        get => _hotkeyWarning;
+        set => SetField(ref _hotkeyWarning, value);
     }
 
     public void Toggle() => IsOn = !IsOn;
@@ -186,6 +215,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _engine.Effects.Effect = kind;
         foreach (var option in Effects) option.SetSelected(option.Kind == kind);
         OnPropertyChanged(nameof(SelectedEffect));
+        OnPropertyChanged(nameof(EffectDisplayName));
     }
 
     private void SelectEffect(EffectKind kind)

@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\VoiceCtx.Audio\VoiceCtx.Audio.csproj" />
+    <ProjectReference Include="..\..\src\VoiceCtx.App\VoiceCtx.App.csproj" />
   </ItemGroup>
 
 </Project>

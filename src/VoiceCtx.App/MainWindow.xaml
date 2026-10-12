@@ -5,7 +5,7 @@
         xmlns:app="clr-namespace:VoiceCtx.App"
         Title="Voice CTX" Width="920" Height="660" MinWidth="780" MinHeight="600"
         Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen" Icon="Assets/VoiceCtx.ico">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <app:EngineStateBrushConverter x:Key="StateBrush" />
@@ -133,6 +133,7 @@
             <Ellipse Width="9" Height="9" VerticalAlignment="Center" Fill="{Binding EngineState, Converter={StaticResource StateBrush}}" />
             <TextBlock Margin="8,0,0,0" Foreground="{StaticResource MutedTextBrush}" Text="{Binding Status}"
                        TextTrimming="CharacterEllipsis" />
+            <TextBlock Margin="16,0,0,0" Foreground="{StaticResource WarningBrush}" Text="{Binding HotkeyWarning}" />
         </StackPanel>
     </Grid>
 </Window>
