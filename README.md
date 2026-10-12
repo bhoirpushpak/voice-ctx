@@ -4,6 +4,25 @@
 changes your voice and sends the result to a virtual microphone. Discord, games, OBS, Zoom or
 any other app can then use that virtual microphone and hear your changed voice.
 
+<p align="center">
+  <a href="https://github.com/bhoirpushpak/voice-ctx/releases/latest/download/VoiceCtx.exe">
+    <img src="https://img.shields.io/badge/Download-VoiceCtx.exe-7C5CFF?style=for-the-badge&logo=windows&logoColor=white" alt="Download VoiceCtx.exe" height="44">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/bhoirpushpak/voice-ctx/releases/latest"><img src="https://img.shields.io/github/v/release/bhoirpushpak/voice-ctx?label=latest&style=flat-square" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Windows-10%20%7C%2011%20(64--bit)-0078D6?style=flat-square" alt="Windows 10 | 11 64-bit">
+  <a href="https://github.com/bhoirpushpak/voice-ctx/releases"><img src="https://img.shields.io/github/downloads/bhoirpushpak/voice-ctx/total?style=flat-square" alt="Downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <b>Also needed:</b> <a href="https://vb-audio.com/Cable/">VB-Audio Virtual Cable</a> (free) &nbsp;·&nbsp;
+  <b>Optional:</b> <a href="https://github.com/bhoirpushpak/voice-ctx/releases/latest/download/VoiceCtx-AiVoice-Models-v1.zip">AI Voice model pack</a> (~700 MB)<br>
+  <sub>A single file with no installer. If Windows SmartScreen warns you, click <b>More info → Run anyway</b>.</sub>
+</p>
+
 - **15 voice effects:** Male, Female, Baby, Helium, Custom pitch, Robot, Alien, Atari, Clone,
   Mutation (normal, fast and slow), Radio, Silence and None.
 - **AI Voice:** real-time AI voice conversion, so you sound like a different person. Your words,
@@ -76,8 +95,8 @@ You **don't** need to install .NET, Visual C++ runtimes or anything else to run 
 ## Quick start
 
 1. **Install VB-Audio Virtual Cable** ([step by step](#installing-vb-audio-virtual-cable)) and reboot.
-2. **Download `VoiceCtx.exe`** from the latest [Release](../../releases) and put it anywhere,
-   for example `C:\Tools\VoiceCtx\`.
+2. **[Download `VoiceCtx.exe`](https://github.com/bhoirpushpak/voice-ctx/releases/latest/download/VoiceCtx.exe)**
+   and put it anywhere, for example `C:\Tools\VoiceCtx\`.
 3. **Double-click `VoiceCtx.exe`.** Windows SmartScreen may warn you because the exe isn't
    code-signed; click **More info → Run anyway**.
 4. In Voice CTX, choose your **Microphone**. **Output** should already say *CABLE Input*.
