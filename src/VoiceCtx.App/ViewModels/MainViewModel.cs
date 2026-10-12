@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using VoiceCtx.App.Services;
 using VoiceCtx.Audio.Effects;
 using VoiceCtx.Audio.Engine;
+using VoiceCtx.Audio.Enhancement;
 
 namespace VoiceCtx.App.ViewModels;
 
@@ -138,6 +139,58 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    public bool NoiseCancelSupported { get; } = MicEnhancer.NoiseCancellationSupported;
+
+    public bool NoiseCancel
+    {
+        get => _engine.Enhancement.NoiseCancel;
+        set
+        {
+            if (_engine.Enhancement.NoiseCancel == value || (value && !NoiseCancelSupported)) return;
+            _engine.Enhancement.NoiseCancel = value;
+            OnPropertyChanged();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Noise reduction amount in percent.</summary>
+    public double NoiseReduction
+    {
+        get => Math.Round(_engine.Enhancement.NoiseReduction * 100);
+        set
+        {
+            _engine.Enhancement.NoiseReduction = (float)(value / 100);
+            OnPropertyChanged();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public bool StudioSound
+    {
+        get => _engine.Enhancement.Studio;
+        set
+        {
+            if (_engine.Enhancement.Studio == value) return;
+            _engine.Enhancement.Studio = value;
+            OnPropertyChanged();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Studio chain intensity in percent.</summary>
+    public double StudioStrength
+    {
+        get => Math.Round(_engine.Enhancement.StudioStrength * 100);
+        set
+        {
+            _engine.Enhancement.StudioStrength = (float)(value / 100);
+            OnPropertyChanged();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public void ToggleNoiseCancel() => NoiseCancel = !NoiseCancel;
+
     public double InputLevel
     {
         get => _inputLevel;
@@ -179,8 +232,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _engine.Effects.CustomSemitones = (float)settings.CustomSemitones;
         _engine.Effects.Mix = (float)(settings.Mix / 100);
         _engine.MasterVolume = (float)(settings.MasterVolume / 100);
+        _engine.Enhancement.NoiseCancel = settings.NoiseCancel && NoiseCancelSupported;
+        _engine.Enhancement.NoiseReduction = (float)(settings.NoiseReduction / 100);
+        _engine.Enhancement.Studio = settings.StudioSound;
+        _engine.Enhancement.StudioStrength = (float)(settings.StudioStrength / 100);
         ApplyEffect(settings.Effect);
-        foreach (var name in new[] { nameof(MonitorEnabled), nameof(IsOn), nameof(CustomSemitones), nameof(CustomSemitonesText), nameof(Mix), nameof(MasterVolume) })
+        foreach (var name in new[] { nameof(MonitorEnabled), nameof(IsOn), nameof(CustomSemitones), nameof(CustomSemitonesText), nameof(Mix), nameof(MasterVolume),
+                     nameof(NoiseCancel), nameof(NoiseReduction), nameof(StudioSound), nameof(StudioStrength) })
             OnPropertyChanged(name);
 
         await RefreshDevicesAsync();
@@ -199,6 +257,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CustomSemitones = _engine.Effects.CustomSemitones,
         MasterVolume = MasterVolume,
         Mix = Mix,
+        NoiseCancel = NoiseCancel,
+        NoiseReduction = NoiseReduction,
+        StudioSound = StudioSound,
+        StudioStrength = StudioStrength,
     };
 
     /// <summary>Shown in the status line when the global hotkey could not be registered.</summary>

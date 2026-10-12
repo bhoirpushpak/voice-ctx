@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:VoiceCtx.App.ViewModels"
         xmlns:app="clr-namespace:VoiceCtx.App"
-        Title="Voice CTX" Width="920" Height="660" MinWidth="780" MinHeight="600"
+        Title="Voice CTX" Width="920" Height="840" MinWidth="780" MinHeight="780"
         Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13"
         WindowStartupLocation="CenterScreen" Icon="Assets/VoiceCtx.ico">
     <Window.Resources>
@@ -26,7 +26,7 @@
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="Voice CTX" FontSize="26" FontWeight="Bold" />
                 <TextBlock Style="{StaticResource Caption}" Margin="0"
-                           Text="Real-time voice changer · use “CABLE Output” as your mic in Discord, games or OBS · Ctrl+Alt+V toggles" />
+                           Text="Use “CABLE Output” as your mic in Discord, games or OBS · Ctrl+Alt+V effect on/off · Ctrl+Alt+N noise cancellation" />
             </StackPanel>
         </DockPanel>
 
@@ -77,6 +77,33 @@
                             <TextBlock Style="{StaticResource Caption}" Text="Master volume" />
                         </DockPanel>
                         <Slider Minimum="0" Maximum="200" Value="{Binding MasterVolume}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Mic enhancement" Margin="0,0,0,2" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,10"
+                                   Text="Cleans up your mic before the voice effect" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Margin="0"
+                                       Text="{Binding NoiseReduction, StringFormat={}{0:0}%}" />
+                            <CheckBox Content="Noise cancellation" IsChecked="{Binding NoiseCancel}"
+                                      IsEnabled="{Binding NoiseCancelSupported}"
+                                      ToolTip="AI noise removal (RNNoise): fans, keyboard, background chatter · Ctrl+Alt+N" />
+                        </DockPanel>
+                        <Slider Minimum="0" Maximum="100" Value="{Binding NoiseReduction}" Margin="0,6,0,12"
+                                IsEnabled="{Binding NoiseCancel}" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Margin="0"
+                                       Text="{Binding StudioStrength, StringFormat={}{0:0}%}" />
+                            <CheckBox Content="Studio sound" IsChecked="{Binding StudioSound}"
+                                      ToolTip="Broadcast mic chain: rumble filter, gate, EQ, de-esser, compressor and limiter" />
+                        </DockPanel>
+                        <Slider Minimum="0" Maximum="100" Value="{Binding StudioStrength}" Margin="0,6,0,0"
+                                IsEnabled="{Binding StudioSound}" />
                     </StackPanel>
                 </Border>
             </StackPanel>

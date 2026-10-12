@@ -7,6 +7,12 @@ app can then use **CABLE Output** as its microphone and hear your changed voice.
 - 15 effects: None, Male, Female, Baby, Helium, Custom pitch (−12…+12 semitones), Robot,
   Alien, Atari, Clone, Mutation, Fast mutation, Slow mutation, Radio, Silence
 - Real pitch shifting (time-domain WSOLA / granular overlap-add), not a playback-speed change
+- **Mic enhancement**, applied before any voice effect, and also usable on its own with *None*:
+  - **Noise cancellation**: AI noise removal with [RNNoise](https://github.com/xiph/rnnoise)
+    for fans, keyboards, traffic and background chatter. It has an adjustable reduction amount and
+    the hotkey **Ctrl+Alt+N**.
+  - **Studio sound**: a broadcast vocal chain (rumble filter, noise gate, warmth/presence EQ,
+    de-esser, compressor and limiter) with a strength slider.
 - Dry/wet "effect strength" control, and click-free 20 ms crossfades when switching effects
 - Big On/Off switch, plus the global hotkey **Ctrl+Alt+V**, which works while you're in a game
 - Optional monitoring, so you can hear yourself in your headphones
@@ -67,14 +73,15 @@ The output is one self-contained, compressed `VoiceCtx.App.exe` (about 70 MB) in
 |---|---|
 | Discord hears silence | Windows can mute the cable itself. Open **Settings → System → Sound → All sound devices → CABLE Input** and unmute it. The status bar in Voice CTX warns when the output device is muted. |
 | "VB-Audio Virtual Cable not found" | Install it from https://vb-audio.com/Cable/, then restart Voice CTX (a reboot may be needed after the driver install). |
-| Hotkey does nothing | Another app already uses Ctrl+Alt+V. The status bar says so when this happens. |
 | Robotic or crackling audio | Close other heavy audio apps. In the **Advanced** tab of the mic and cable device properties, use the same sample rate (48 kHz) for both. |
-| Delay feels long | Passthrough adds about 30–40 ms; pitch-based effects add about 30 ms more. |
+| Delay feels long | Passthrough adds about 30–40 ms; noise cancellation adds about 20 ms; pitch-based effects add about 30 ms more. |
+| Noise cancellation is greyed out | `rnnoise.dll` failed to load. Rebuild it (see below) or reinstall. |
+| Hotkeys do nothing | Another app already uses Ctrl+Alt+V or Ctrl+Alt+N. The status bar says which one. |
 
 ## How it works
 
 ```
-mic ──WASAPI capture (10 ms, MMCSS)──► effect processor ──► volume ──► FIFO + drift-correcting resampler ──► WASAPI render ──► CABLE Input
+mic ──WASAPI capture (10 ms, MMCSS)──► noise cancel ──► studio chain ──► effect processor ──► volume ──► FIFO + drift-correcting resampler ──► WASAPI render ──► CABLE Input
                                                                      └──► FIFO + resampler ──► WASAPI render ──► monitor headphones
 ```
 
@@ -84,6 +91,11 @@ mic ──WASAPI capture (10 ms, MMCSS)──► effect processor ──► volu
     recovery.
   - `Dsp/`: `IVoiceEffect`, the pitch shifter, the resampler and the filters.
   - `Effects/`: the effects, plus the crossfading `EffectProcessor`.
+  - `Enhancement/`: the RNNoise wrapper (resampled to 48 kHz and framed into 10 ms blocks) and
+    the studio vocal chain.
+  - `Native/rnnoise.dll`: built from the pinned upstream RNNoise v0.2 release by
+    `native/build-rnnoise.ps1`. That script needs the Visual Studio C++ build tools and verifies
+    the source tarball's SHA-256. You only need to run it to rebuild the DLL.
 - `src/VoiceCtx.App`: the WPF UI (MVVM), tray icon, global hotkey and settings.
 - `tests/VoiceCtx.Tests`: xUnit tests. For every effect they check range, NaN/Inf, reset and
   allocations. They also check that Silence outputs zeros and None is bit-identical, that the
@@ -100,3 +112,6 @@ plug-in. Voice CTX is an independent implementation written from scratch.
 ## License
 
 [MIT](LICENSE)
+
+Third-party: RNNoise © Xiph.Org Foundation, Jean-Marc Valin and others, BSD-3-Clause. See
+`src/VoiceCtx.Audio/Native/RNNOISE-LICENSE.txt`, which is also shipped next to the published exe.

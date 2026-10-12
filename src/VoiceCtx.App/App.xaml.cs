@@ -18,6 +18,7 @@ public partial class App : Application
     private MainWindow? _window;
     private TrayIcon? _tray;
     private GlobalHotkey? _hotkey;
+    private GlobalHotkey? _noiseHotkey;
     private DispatcherTimer? _saveTimer;
     private bool _exiting;
 
@@ -49,8 +50,10 @@ public partial class App : Application
         _tray.ExitRequested += (_, _) => ExitApplication();
 
         _hotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.V, _viewModel.Toggle);
-        if (!_hotkey.IsRegistered)
-            _viewModel.HotkeyWarning = $"{_hotkey.Display} is used by another app, so the global hotkey is unavailable.";
+        _noiseHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.N, _viewModel.ToggleNoiseCancel);
+        var taken = new[] { _hotkey, _noiseHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
+        if (taken.Count > 0)
+            _viewModel.HotkeyWarning = $"{string.Join(" and ", taken)} {(taken.Count == 1 ? "is" : "are")} used by another app, so that hotkey is unavailable.";
 
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _saveTimer.Tick += (_, _) => SaveSettings();
@@ -111,6 +114,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _hotkey?.Dispose();
+        _noiseHotkey?.Dispose();
         _tray?.Dispose();
         _viewModel?.Dispose();
         _engine?.Dispose();

@@ -1,5 +1,6 @@
 using NAudio.CoreAudioApi;
 using VoiceCtx.Audio.Effects;
+using VoiceCtx.Audio.Enhancement;
 
 namespace VoiceCtx.Audio.Engine;
 
@@ -44,6 +45,9 @@ public sealed class AudioEngine : IDisposable
 
     /// <summary>Effect selection, On/Off, custom pitch and dry/wet; read by the audio thread every block.</summary>
     public EffectControls Effects { get; } = new();
+
+    /// <summary>Noise cancellation and studio-sound settings, applied before the voice effect.</summary>
+    public MicEnhancementControls Enhancement { get; } = new();
 
     /// <summary>Peak input level 0..1 with ~250 ms decay, for metering.</summary>
     public float InputLevel => _inputLevel;
@@ -150,6 +154,7 @@ public sealed class AudioEngine : IDisposable
         float decay = MathF.Exp(-block.Length / (pipeline.InputRate * 0.25f));
         _inputLevel = Math.Max(Math.Min(peak, 1f), _inputLevel * decay);
 
+        pipeline.Enhancer.Process(block);
         pipeline.Effects.Process(block);
 
         float volume = _masterVolume;
@@ -189,6 +194,7 @@ public sealed class AudioEngine : IDisposable
         public bool Degraded { get; private set; }
         public int InputRate { get; private set; }
         public EffectProcessor Effects { get; private set; } = null!;
+        public MicEnhancer Enhancer { get; private set; } = null!;
         public OutputSink Output { get; private set; } = null!;
         public OutputSink? Monitor { get; private set; }
 
@@ -223,6 +229,7 @@ public sealed class AudioEngine : IDisposable
                 if (IsMuted(input)) notes.Add($"{inputName} is muted in Windows Sound settings");
                 pipeline._capture = new WasapiCaptureStream(input, CaptureBufferMs, block => engine.ProcessCaptured(block, pipeline));
                 pipeline.InputRate = pipeline._capture.Format.SampleRate;
+                pipeline.Enhancer = new MicEnhancer(pipeline.InputRate, pipeline._capture.BufferFrames, engine.Enhancement);
                 pipeline.Effects = new EffectProcessor(pipeline.InputRate, pipeline._capture.BufferFrames, engine.Effects);
                 pipeline._output = new WasapiRenderStream(output, RenderBufferMs, mono => pipeline.Output.Pull(mono));
                 pipeline.Output = CreateSink(pipeline._capture, pipeline._output);
@@ -296,6 +303,8 @@ public sealed class AudioEngine : IDisposable
         public void Dispose()
         {
             foreach (var stream in Streams()) stream.Dispose();
+            // Streams join their audio threads above, so native denoiser state is no longer in use.
+            Enhancer?.Dispose();
         }
     }
 }

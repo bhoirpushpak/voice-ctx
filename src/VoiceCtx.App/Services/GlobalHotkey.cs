@@ -10,8 +10,9 @@ public sealed partial class GlobalHotkey : IDisposable
 {
     private const int WmHotkey = 0x0312;
     private const uint ModAlt = 0x0001, ModControl = 0x0002, ModShift = 0x0004, ModWin = 0x0008, ModNoRepeat = 0x4000;
-    private const int HotkeyId = 0xB00C;
+    private static int s_nextId = 0xB00C;
 
+    private readonly int _id = Interlocked.Increment(ref s_nextId);
     private readonly IntPtr _hwnd;
     private readonly HwndSource _source;
     private readonly Action _onPressed;
@@ -23,7 +24,7 @@ public sealed partial class GlobalHotkey : IDisposable
         _source = HwndSource.FromHwnd(_hwnd);
         _source.AddHook(WndProc);
         Display = $"{modifiers.ToString().Replace(", ", "+")}+{key}";
-        IsRegistered = RegisterHotKey(_hwnd, HotkeyId, ToNative(modifiers) | ModNoRepeat,
+        IsRegistered = RegisterHotKey(_hwnd, _id, ToNative(modifiers) | ModNoRepeat,
             (uint)KeyInterop.VirtualKeyFromKey(key));
     }
 
@@ -34,7 +35,7 @@ public sealed partial class GlobalHotkey : IDisposable
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WmHotkey && wParam.ToInt32() == HotkeyId)
+        if (msg == WmHotkey && wParam.ToInt32() == _id)
         {
             _onPressed();
             handled = true;
@@ -50,7 +51,7 @@ public sealed partial class GlobalHotkey : IDisposable
 
     public void Dispose()
     {
-        if (IsRegistered) UnregisterHotKey(_hwnd, HotkeyId);
+        if (IsRegistered) UnregisterHotKey(_hwnd, _id);
         _source.RemoveHook(WndProc);
     }
 

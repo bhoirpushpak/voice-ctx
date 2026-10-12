@@ -17,4 +17,10 @@
     <InternalsVisibleTo Include="VoiceCtx.Tests" />
   </ItemGroup>
 
+  <!-- RNNoise (BSD-3-Clause), built by native/build-rnnoise.ps1. -->
+  <ItemGroup>
+    <None Include="Native\rnnoise.dll" Link="rnnoise.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Native\RNNOISE-LICENSE.txt" Link="RNNOISE-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

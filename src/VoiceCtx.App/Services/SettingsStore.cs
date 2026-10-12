@@ -16,6 +16,10 @@ public sealed class AppSettings
     public double CustomSemitones { get; set; }
     public double MasterVolume { get; set; } = 100;
     public double Mix { get; set; } = 100;
+    public bool NoiseCancel { get; set; }
+    public double NoiseReduction { get; set; } = 100;
+    public bool StudioSound { get; set; }
+    public double StudioStrength { get; set; } = 70;
 }
 
 /// <summary>Loads and saves <see cref="AppSettings"/> as JSON (default: %AppData%\VoiceCtx\settings.json).</summary>
@@ -43,6 +47,8 @@ public sealed class SettingsStore(string path)
             settings.CustomSemitones = Math.Clamp(settings.CustomSemitones, -12, 12);
             settings.MasterVolume = Math.Clamp(settings.MasterVolume, 0, 200);
             settings.Mix = Math.Clamp(settings.Mix, 0, 100);
+            settings.NoiseReduction = Math.Clamp(settings.NoiseReduction, 0, 100);
+            settings.StudioStrength = Math.Clamp(settings.StudioStrength, 0, 100);
             return settings;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or NotSupportedException)
