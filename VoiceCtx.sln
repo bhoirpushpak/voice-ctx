@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6A86EE92-C775-4D03-A5BB-2C853E8B792E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceCtx.Audio", "src\VoiceCtx.Audio\VoiceCtx.Audio.csproj", "{5ACE0BD4-8489-472A-A6E7-9B23DBFF4ABF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceCtx.App", "src\VoiceCtx.App\VoiceCtx.App.csproj", "{87B0CF70-4290-45AC-86C9-DE1BE01B0959}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D58E94E8-811D-4FFF-859B-57BB5C215E02}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceCtx.Tests", "tests\VoiceCtx.Tests\VoiceCtx.Tests.csproj", "{6DACA279-4FF3-4BD4-8822-A700630160CC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5ACE0BD4-8489-472A-A6E7-9B23DBFF4ABF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ACE0BD4-8489-472A-A6E7-9B23DBFF4ABF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ACE0BD4-8489-472A-A6E7-9B23DBFF4ABF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ACE0BD4-8489-472A-A6E7-9B23DBFF4ABF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87B0CF70-4290-45AC-86C9-DE1BE01B0959}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87B0CF70-4290-45AC-86C9-DE1BE01B0959}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87B0CF70-4290-45AC-86C9-DE1BE01B0959}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87B0CF70-4290-45AC-86C9-DE1BE01B0959}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DACA279-4FF3-4BD4-8822-A700630160CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DACA279-4FF3-4BD4-8822-A700630160CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DACA279-4FF3-4BD4-8822-A700630160CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DACA279-4FF3-4BD4-8822-A700630160CC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5ACE0BD4-8489-472A-A6E7-9B23DBFF4ABF} = {6A86EE92-C775-4D03-A5BB-2C853E8B792E}
+		{87B0CF70-4290-45AC-86C9-DE1BE01B0959} = {6A86EE92-C775-4D03-A5BB-2C853E8B792E}
+		{6DACA279-4FF3-4BD4-8822-A700630160CC} = {D58E94E8-811D-4FFF-859B-57BB5C215E02}
+	EndGlobalSection
+EndGlobal
