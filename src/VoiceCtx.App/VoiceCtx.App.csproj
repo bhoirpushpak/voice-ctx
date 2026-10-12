@@ -10,8 +10,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Assets\VoiceCtx.ico</ApplicationIcon>
-    <AssemblyTitle>Voice CTX</AssemblyTitle>
+    <AssemblyName>VoiceCtx</AssemblyName>
+    <RootNamespace>VoiceCtx.App</RootNamespace>
+    <AssemblyTitle>Voice CTX — Voice Change Transform Xpress</AssemblyTitle>
     <Product>Voice CTX</Product>
+    <Description>Real-time voice changer for Windows: voice effects, noise cancellation, studio sound and AI voices.</Description>
+    <Copyright>Copyright (c) 2026 Pushpak Bhoir</Copyright>
+    <Version>1.0.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <!-- `dotnet publish -p:PublishSingleFile=true`: one compressed exe, WPF native libraries included. -->

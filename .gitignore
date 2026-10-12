@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 
 # Project folder name collides with the macOS *.app rule above
 !/src/VoiceCtx.App/
+
+# Release staging
+/artifacts/
