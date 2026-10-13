@@ -33,12 +33,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private EngineState _engineState;
     private string? _hotkeyWarning;
 
-    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice)
+    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice, TypeToSpeakViewModel typeToSpeak)
     {
         _devices = devices;
         _engine = engine;
         AiVoice = aiVoice;
         AiVoice.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
+        TypeToSpeak = typeToSpeak;
+        TypeToSpeak.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
         _dispatcher = Dispatcher.CurrentDispatcher;
         Effects = EffectOption.CreateCatalog(SelectEffect);
         OpenCableSiteCommand = new RelayCommand(() =>
@@ -55,6 +57,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>The separate AI Voice feature (its own tab).</summary>
     public AiVoiceViewModel AiVoice { get; }
+
+    /// <summary>Feature 3: type text and have it spoken into the mic path.</summary>
+    public TypeToSpeakViewModel TypeToSpeak { get; }
 
     public ObservableCollection<AudioDeviceInfo> Inputs { get; } = [];
     public ObservableCollection<AudioDeviceInfo> Outputs { get; } = [];
@@ -247,6 +252,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(name);
 
         AiVoice.Initialize(settings.AiVoiceEnabled, settings.AiVoiceId, settings.AiVoicePitchShift);
+        TypeToSpeak.Initialize(settings.TtsVoiceId, settings.TtsRate, settings.TtsMuteMic);
 
         await RefreshDevicesAsync();
         _meterTimer.Start();
@@ -271,6 +277,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         AiVoiceEnabled = AiVoice.IsEnabled,
         AiVoiceId = AiVoice.SelectedVoiceId,
         AiVoicePitchShift = AiVoice.PitchShift,
+        TtsVoiceId = TypeToSpeak.SelectedVoiceId,
+        TtsRate = TypeToSpeak.Rate,
+        TtsMuteMic = TypeToSpeak.MuteMic,
     };
 
     /// <summary>Shown in the status line when the global hotkey could not be registered.</summary>
@@ -362,5 +371,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         _meterTimer.Stop();
         AiVoice.Dispose();
+        TypeToSpeak.Dispose();
     }
 }

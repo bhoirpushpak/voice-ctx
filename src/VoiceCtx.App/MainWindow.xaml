@@ -226,6 +226,76 @@
                             </ScrollViewer>
                         </DockPanel>
                     </TabItem>
+
+                    <TabItem x:Name="TypeToSpeakTab" Header="Type to speak" DataContext="{Binding TypeToSpeak}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="4,0,4,12">
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Say it without speaking" Margin="0,0,0,2" />
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0"
+                                           Text="Type a line and press Enter. It's spoken into your mic, so it goes through AI Voice and voice effects just like your own voice. Ctrl+Alt+T jumps here from anywhere." />
+                            </StackPanel>
+
+                            <Grid DockPanel.Dock="Top" Margin="4,0,4,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="170" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Caption}" Text="Speaking voice (installed in Windows)" />
+                                    <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding RateText}" />
+                                        <TextBlock Style="{StaticResource Caption}" Text="Speed" />
+                                    </DockPanel>
+                                    <Slider Minimum="0.5" Maximum="2" Value="{Binding Rate}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid DockPanel.Dock="Top" Margin="4,0,4,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="SpeakBox" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" MinHeight="70" MaxHeight="120"
+                                         TextWrapping="Wrap" AcceptsReturn="True" PreviewKeyDown="OnSpeakBoxKeyDown"
+                                         ToolTip="Enter = speak · Shift+Enter = new line · Esc = stop" />
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Top">
+                                    <Button Style="{StaticResource ActionButton}" Content="Speak" Command="{Binding SpeakCommand}" Margin="0,0,0,6" MinWidth="80" />
+                                    <Button Style="{StaticResource ActionButton}" Content="Stop" Command="{Binding StopCommand}" Margin="0" MinWidth="80" />
+                                </StackPanel>
+                            </Grid>
+
+                            <DockPanel DockPanel.Dock="Top" Margin="4,0,4,12">
+                                <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource AccentBrush}" Text="{Binding Status}" TextWrapping="Wrap" MaxWidth="320" />
+                                <CheckBox Content="Mute my mic while a line is spoken" IsChecked="{Binding MuteMic}" />
+                            </DockPanel>
+
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="4,10,4,0">
+                                <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                           Text="Need another language or voice? Add one in Windows:" />
+                                <Button Style="{StaticResource ActionButton}" Content="Speech settings" Command="{Binding OpenSpeechSettingsCommand}" />
+                            </StackPanel>
+
+                            <DockPanel Margin="4,0,4,0">
+                                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Text="Recent lines (click to say again)" />
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding History}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:SpokenLine}">
+                                                <Button Style="{StaticResource ActionButton}" Command="{Binding ReplayCommand}"
+                                                        Margin="0,0,0,6" HorizontalContentAlignment="Left">
+                                                    <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DockPanel>
+                    </TabItem>
                 </TabControl>
             </Border>
         </Grid>

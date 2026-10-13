@@ -2,6 +2,7 @@ using NAudio.CoreAudioApi;
 using VoiceCtx.Audio.AiVoice;
 using VoiceCtx.Audio.Effects;
 using VoiceCtx.Audio.Enhancement;
+using VoiceCtx.Audio.Speech;
 
 namespace VoiceCtx.Audio.Engine;
 
@@ -39,6 +40,9 @@ public sealed class AudioEngine : IDisposable
         _aiVoiceService = aiVoice;
         _devices.DevicesChanged += OnDevicesChanged;
     }
+
+    /// <summary>Synthesized speech (Type to speak, Live translate) mixed into the mic path before AI Voice.</summary>
+    public SpeechInjector Speech { get; } = new();
 
     /// <summary>AI Voice on/off and pitch shift; applied after mic enhancement, before voice effects.</summary>
     public AiVoiceControls AiVoice { get; } = new();
@@ -167,6 +171,7 @@ public sealed class AudioEngine : IDisposable
         _inputLevel = Math.Max(Math.Min(peak, 1f), _inputLevel * decay);
 
         pipeline.Enhancer.Process(block);
+        pipeline.Speech.Process(block);
         pipeline.AiVoice?.Process(block);
         pipeline.Effects.Process(block);
 
@@ -208,6 +213,7 @@ public sealed class AudioEngine : IDisposable
         public int InputRate { get; private set; }
         public EffectProcessor Effects { get; private set; } = null!;
         public MicEnhancer Enhancer { get; private set; } = null!;
+        public SpeechStage Speech { get; private set; } = null!;
         public AiVoiceStage? AiVoice { get; private set; }
         public OutputSink Output { get; private set; } = null!;
         public OutputSink? Monitor { get; private set; }
@@ -244,6 +250,7 @@ public sealed class AudioEngine : IDisposable
                 pipeline._capture = new WasapiCaptureStream(input, CaptureBufferMs, block => engine.ProcessCaptured(block, pipeline));
                 pipeline.InputRate = pipeline._capture.Format.SampleRate;
                 pipeline.Enhancer = new MicEnhancer(pipeline.InputRate, pipeline._capture.BufferFrames, engine.Enhancement);
+                pipeline.Speech = new SpeechStage(pipeline.InputRate, engine.Speech);
                 if (engine._aiVoiceService != null)
                     pipeline.AiVoice = new AiVoiceStage(pipeline.InputRate, pipeline._capture.BufferFrames, engine.AiVoice, engine._aiVoiceService);
                 pipeline.Effects = new EffectProcessor(pipeline.InputRate, pipeline._capture.BufferFrames, engine.Effects);

@@ -286,6 +286,29 @@
         </Setter>
     </Style>
 
+    <!-- Text input -->
+    <Style TargetType="TextBox">
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd" Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1.5" CornerRadius="8" Padding="10,8">
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalScrollBarVisibility="Auto" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Plain action button -->
     <Style x:Key="ActionButton" TargetType="Button">
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />

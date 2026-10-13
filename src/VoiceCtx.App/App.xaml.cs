@@ -21,6 +21,7 @@ public partial class App : Application
     private GlobalHotkey? _hotkey;
     private GlobalHotkey? _noiseHotkey;
     private GlobalHotkey? _aiVoiceHotkey;
+    private GlobalHotkey? _speakHotkey;
     private AiVoiceService? _aiVoice;
     private DispatcherTimer? _saveTimer;
     private bool _exiting;
@@ -43,7 +44,7 @@ public partial class App : Application
         _devices = new DeviceService();
         _aiVoice = new AiVoiceService(new VoiceLibrary(VoiceLibrary.DefaultRoot));
         _engine = new AudioEngine(_devices, _aiVoice);
-        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine));
+        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine), new TypeToSpeakViewModel(_engine.Speech));
 
         _window = new MainWindow { DataContext = _viewModel };
         _window.Closing += OnWindowClosing;
@@ -56,9 +57,14 @@ public partial class App : Application
         _hotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.V, _viewModel.Toggle);
         _noiseHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.N, _viewModel.ToggleNoiseCancel);
         _aiVoiceHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.A, _viewModel.AiVoice.Toggle);
-        var taken = new[] { _hotkey, _noiseHotkey, _aiVoiceHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
+        _speakHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.T, () =>
+        {
+            ShowWindow();
+            _window.FocusTypeToSpeak();
+        });
+        var taken = new[] { _hotkey, _noiseHotkey, _aiVoiceHotkey, _speakHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
         if (taken.Count > 0)
-            _viewModel.HotkeyWarning = $"{string.Join(" and ", taken)} {(taken.Count == 1 ? "is" : "are")} used by another app, so that hotkey is unavailable.";
+            _viewModel.HotkeyWarning = $"{string.Join(", ", taken)} {(taken.Count == 1 ? "is" : "are")} used by another app, so {(taken.Count == 1 ? "that hotkey is" : "those hotkeys are")} unavailable.";
 
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _saveTimer.Tick += (_, _) => SaveSettings();
@@ -121,6 +127,7 @@ public partial class App : Application
         _hotkey?.Dispose();
         _noiseHotkey?.Dispose();
         _aiVoiceHotkey?.Dispose();
+        _speakHotkey?.Dispose();
         _tray?.Dispose();
         _viewModel?.Dispose();
         _engine?.Dispose();
