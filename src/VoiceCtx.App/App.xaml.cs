@@ -6,6 +6,7 @@ using VoiceCtx.App.Services;
 using VoiceCtx.App.ViewModels;
 using VoiceCtx.Audio.AiVoice;
 using VoiceCtx.Audio.Engine;
+using VoiceCtx.Audio.Translate;
 
 namespace VoiceCtx.App;
 
@@ -22,6 +23,8 @@ public partial class App : Application
     private GlobalHotkey? _noiseHotkey;
     private GlobalHotkey? _aiVoiceHotkey;
     private GlobalHotkey? _speakHotkey;
+    private GlobalHotkey? _translateHotkey;
+    private LiveTranslateService? _translate;
     private AiVoiceService? _aiVoice;
     private DispatcherTimer? _saveTimer;
     private bool _exiting;
@@ -44,7 +47,9 @@ public partial class App : Application
         _devices = new DeviceService();
         _aiVoice = new AiVoiceService(new VoiceLibrary(VoiceLibrary.DefaultRoot));
         _engine = new AudioEngine(_devices, _aiVoice);
-        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine), new TypeToSpeakViewModel(_engine.Speech));
+        _translate = new LiveTranslateService(new TranslateLibrary(TranslateLibrary.DefaultRoot), _engine.Speech);
+        _engine.AttachTranslator(_translate);
+        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine), new TypeToSpeakViewModel(_engine.Speech), new LiveTranslateViewModel(_translate));
 
         _window = new MainWindow { DataContext = _viewModel };
         _window.Closing += OnWindowClosing;
@@ -62,7 +67,8 @@ public partial class App : Application
             ShowWindow();
             _window.FocusTypeToSpeak();
         });
-        var taken = new[] { _hotkey, _noiseHotkey, _aiVoiceHotkey, _speakHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
+        _translateHotkey = new GlobalHotkey(_window, ModifierKeys.Control | ModifierKeys.Alt, Key.L, _viewModel.LiveTranslate.Toggle);
+        var taken = new[] { _hotkey, _noiseHotkey, _aiVoiceHotkey, _speakHotkey, _translateHotkey }.Where(h => !h.IsRegistered).Select(h => h.Display).ToList();
         if (taken.Count > 0)
             _viewModel.HotkeyWarning = $"{string.Join(", ", taken)} {(taken.Count == 1 ? "is" : "are")} used by another app, so {(taken.Count == 1 ? "that hotkey is" : "those hotkeys are")} unavailable.";
 
@@ -128,10 +134,12 @@ public partial class App : Application
         _noiseHotkey?.Dispose();
         _aiVoiceHotkey?.Dispose();
         _speakHotkey?.Dispose();
+        _translateHotkey?.Dispose();
         _tray?.Dispose();
         _viewModel?.Dispose();
         _engine?.Dispose();
         _aiVoice?.Dispose();
+        _translate?.Dispose();
         _devices?.Dispose();
         _instance?.Dispose();
         base.OnExit(e);

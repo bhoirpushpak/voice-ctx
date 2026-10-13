@@ -26,6 +26,11 @@ public sealed class AppSettings
     public string? TtsVoiceId { get; set; }
     public double TtsRate { get; set; } = 1.0;
     public bool TtsMuteMic { get; set; } = true;
+    public bool TranslateEnabled { get; set; }
+    public string TranslateFrom { get; set; } = "auto";
+    public string TranslateTo { get; set; } = "en";
+    public string? TranslateVoiceId { get; set; }
+    public bool TranslateKeepOriginal { get; set; }
 }
 
 /// <summary>Loads and saves <see cref="AppSettings"/> as JSON (default: %AppData%\VoiceCtx\settings.json).</summary>

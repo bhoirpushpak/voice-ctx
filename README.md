@@ -19,7 +19,8 @@ any other app can then use that virtual microphone and hear your changed voice.
 
 <p align="center">
   <b>Also needed:</b> <a href="https://vb-audio.com/Cable/">VB-Audio Virtual Cable</a> (free) &nbsp;·&nbsp;
-  <b>Optional:</b> <a href="https://github.com/bhoirpushpak/voice-ctx/releases/latest/download/VoiceCtx-AiVoice-Models-v1.zip">AI Voice model pack</a> (~700 MB)<br>
+  <b>Optional:</b> <a href="https://github.com/bhoirpushpak/voice-ctx/releases/latest/download/VoiceCtx-AiVoice-Models-v1.zip">AI Voice model pack</a> (~700 MB) &nbsp;·&nbsp;
+  <a href="https://github.com/bhoirpushpak/voice-ctx/releases/latest/download/VoiceCtx-Translate-Models-v1.zip">Live translate model pack</a> (~1.6 GB)<br>
   <sub>A single file with no installer. If Windows SmartScreen warns you, click <b>More info → Run anyway</b>.</sub>
 </p>
 
@@ -27,6 +28,10 @@ any other app can then use that virtual microphone and hear your changed voice.
   Mutation (normal, fast and slow), Radio, Silence and None.
 - **AI Voice:** real-time AI voice conversion, so you sound like a different person. Your words,
   timing and language stay your own. It ships with two built-in voices and lets you import your own.
+- **Type to speak:** type a line and press Enter, and it's spoken into your mic with any Windows
+  voice. It goes through AI Voice and the voice effects like your own voice does.
+- **Live translate:** speak one language and be heard in another. When you pause, what you said is
+  transcribed, translated (42 languages) and spoken into your mic, in your AI voice if AI Voice is on.
 - **Mic enhancement:**
   - **Noise cancellation:** AI noise removal for fans, keyboards, traffic and background chatter.
   - **Studio sound:** a broadcast-style vocal chain (EQ, de-esser, compressor and limiter).
@@ -51,12 +56,13 @@ any other app can then use that virtual microphone and hear your changed voice.
 6. [Using it in Discord, OBS and games](#using-it-in-discord-obs-and-games)
 7. [Feature guide](#feature-guide)
 8. [AI Voice setup](#ai-voice-setup)
-9. [Hotkeys](#hotkeys)
-10. [Where your data is stored](#where-your-data-is-stored)
-11. [Troubleshooting](#troubleshooting)
-12. [Building from source](#building-from-source)
-13. [Project layout](#project-layout)
-14. [Credits and licenses](#credits-and-licenses)
+9. [Live translate setup](#live-translate-setup)
+10. [Hotkeys](#hotkeys)
+11. [Where your data is stored](#where-your-data-is-stored)
+12. [Troubleshooting](#troubleshooting)
+13. [Building from source](#building-from-source)
+14. [Project layout](#project-layout)
+15. [Credits and licenses](#credits-and-licenses)
 
 ---
 
@@ -66,10 +72,10 @@ any other app can then use that virtual microphone and hear your changed voice.
 |---|---|---|
 | **OS** | Windows 10 64-bit (version 1903 or later) | Windows 11 64-bit |
 | **CPU** | Any 64-bit dual-core | 4+ cores |
-| **RAM** | 4 GB | 8 GB, or 16 GB if you use AI Voice |
-| **Disk** | 100 MB | 1.2 GB with the AI Voice model pack |
+| **RAM** | 4 GB | 8 GB, or 16 GB if you use AI Voice or Live translate |
+| **Disk** | 100 MB | 1.2 GB with the AI Voice model pack, plus 1.7 GB with the Live translate model pack |
 | **Audio** | Any microphone or headset | A headset, so your speakers don't feed back into the mic |
-| **GPU** | Not needed for effects, noise cancellation or studio sound | **Required in practice for AI Voice:** a DirectX 12 GPU with 2 GB+ of video memory. A discrete NVIDIA, AMD or Intel Arc GPU is recommended. |
+| **GPU** | Not needed for effects, noise cancellation, studio sound or Type to speak | **Required in practice for AI Voice:** a DirectX 12 GPU with 2 GB+ of video memory. **Recommended for Live translate:** a Vulkan GPU with 1 GB+ free video memory. A discrete NVIDIA, AMD or Intel Arc GPU is recommended. |
 
 **How heavy each feature is:**
 
@@ -78,9 +84,12 @@ any other app can then use that virtual microphone and hear your changed voice.
 | Voice effects and studio sound | Under 1% of one CPU core | — |
 | Noise cancellation | About 1.5% of a core | About 20 ms |
 | AI Voice | About 28 ms of GPU time per 100 ms of audio on an RTX 4060 Laptop GPU | About 180 ms |
+| Type to speak | Brief CPU use while a line is prepared | Under half a second before speech starts |
+| Live translate | About 0.5 s of GPU time per 6 s sentence, plus 0.1–0.4 s of CPU time to translate it | About 1.5–2 s after you stop speaking |
 
 Without a GPU, AI Voice falls back to the CPU, which is usually too slow. When that happens the
-app keeps your normal voice and tells you.
+app keeps your normal voice and tells you. Live translate also works without a GPU, but each
+sentence then takes several seconds longer.
 
 ## Prerequisites
 
@@ -88,6 +97,8 @@ app keeps your normal voice and tells you.
 |---|---|---|
 | **VB-Audio Virtual Cable** (free) | **Required.** It's the virtual microphone other apps listen to. | [vb-audio.com/Cable](https://vb-audio.com/Cable/) |
 | **AI Voice model pack** (~900 MB) | Optional, only for the AI Voice tab | The [Releases](../../releases) page (`VoiceCtx-AiVoice-Models-*.zip`) |
+| **Live translate model pack** (~1.6 GB) | Optional, only for the Live translate tab | The [Releases](../../releases) page (`VoiceCtx-Translate-Models-*.zip`) |
+| **Windows voices** | Type to speak and Live translate. Windows comes with a few; add more languages in **Settings → Time & language → Speech**. | Built into Windows |
 | .NET 8 SDK | Only for building from source. The release `.exe` already contains everything. | [dotnet.microsoft.com](https://dotnet.microsoft.com/download/dotnet/8.0) |
 
 You **don't** need to install .NET, Visual C++ runtimes or anything else to run the release exe.
@@ -208,6 +219,23 @@ Switching effects crossfades over 20 ms, so it never clicks.
 ### AI Voice (tab)
 See [AI Voice setup](#ai-voice-setup) below.
 
+### Type to speak (tab)
+Say things without speaking: handy when you can't talk out loud, or for a character's catchphrase.
+1. Pick a **Speaking voice** (any voice installed in Windows) and a **Speed**.
+2. Type a line and press **Enter** (**Shift+Enter** for a new line, **Esc** to stop).
+3. The line is spoken into your mic, so it goes through AI Voice and the voice effects like your
+   own voice does. With AI Voice on, the line comes out in your AI voice.
+
+- **Mute my mic while a line is spoken** keeps background noise out of it. It's on by default.
+- **Recent lines:** click one to say it again.
+- **Ctrl+Alt+T** brings Voice CTX to the front with the text box ready, from anywhere.
+
+To add voices or languages, click **Speech settings** (Windows **Settings → Time & language →
+Speech → Add voices**).
+
+### Live translate (tab)
+See [Live translate setup](#live-translate-setup) below.
+
 ## AI Voice setup
 
 AI Voice uses RVC (Retrieval-based Voice Conversion) models to turn your voice into another voice
@@ -270,6 +298,58 @@ safe, weights-only mode, and Voice CTX itself never opens `.pth` files.
 > online are clones of real people made without their consent. Never use AI Voice to impersonate
 > someone or to deceive people.
 
+## Live translate setup
+
+Live translate lets you speak one language and be heard in another:
+
+```
+you speak ─► speech-to-text (Whisper) ─► translate (NLLB) ─► Windows voice ─► AI Voice ─► voice effect ─► CABLE Input
+```
+
+Everything runs on your PC; nothing is sent to the internet. Speech recognition runs on your GPU
+through Vulkan (NVIDIA, AMD and Intel). On laptops with two GPUs, Voice CTX picks the dedicated one.
+Translation runs on the CPU.
+
+### 1. Install the model pack (one time)
+
+1. Download **`VoiceCtx-Translate-Models-v1.zip`** (about 1.6 GB) from the [Releases](../../releases) page.
+2. Press `Win + R`, type `%AppData%\VoiceCtx`, and press Enter. Create the folder first if it doesn't exist.
+3. Extract the zip there, so that you end up with:
+
+   ```
+   %AppData%\VoiceCtx\Translate\whisper\ggml-large-v3-turbo-q5_0.bin
+   %AppData%\VoiceCtx\Translate\vad\silero_vad.onnx
+   %AppData%\VoiceCtx\Translate\nllb\  (encoder, decoder, tokenizer and vocab.json)
+   %AppData%\VoiceCtx\Translate\CREDITS.txt
+   ```
+
+4. Restart Voice CTX.
+
+Prefer to build the models yourself? Use [`tools/translate/build_models.py`](tools/translate)
+(see [Building from source](#building-from-source)).
+
+### 2. Use it
+
+1. Open the **Live translate** tab.
+2. Choose **I speak** (or leave it on **Auto-detect**) and **Translate into**.
+3. Choose a **Speaking voice** for the target language. If Windows has no voice for that language,
+   Voice CTX warns you and only shows the translation as subtitles; click **Speech settings** to
+   add one.
+4. Flip the switch to **ON**, or press **Ctrl+Alt+L**. The first time takes several seconds while
+   the models load.
+5. Talk normally and **pause** at the end of each sentence. About 1.5–2 seconds later, the
+   translation is spoken into your mic, and the original and translated lines appear as subtitles.
+
+- While Live translate is on, your real voice is muted so people only hear the translation. Tick
+  **Keep my real voice quietly underneath** to keep it at a low level instead.
+- **Use headphones**, otherwise your mic picks up the spoken translation.
+- Turn on **AI Voice** too, and the translation is spoken in your AI voice.
+- **42 languages** are supported, including English, Spanish, French, German, Hindi, Marathi,
+  Japanese, Chinese, Arabic and Russian.
+
+> The translation model (NLLB-200 by Meta AI) is licensed for **non-commercial use only**. Voice CTX
+> is a free app; please don't use Live translate commercially.
+
 ## Hotkeys
 
 These work everywhere, including in games:
@@ -279,6 +359,8 @@ These work everywhere, including in games:
 | **Ctrl+Alt+V** | Voice effects on/off |
 | **Ctrl+Alt+N** | Noise cancellation on/off |
 | **Ctrl+Alt+A** | AI Voice on/off |
+| **Ctrl+Alt+T** | Bring Voice CTX to the front, ready to type a line to speak |
+| **Ctrl+Alt+L** | Live translate on/off |
 
 If another app already uses one of these combinations, the status bar tells you which hotkey is
 unavailable.
@@ -289,6 +371,7 @@ unavailable.
 |---|---|
 | Settings (devices, effect, sliders, toggles) | `%AppData%\VoiceCtx\settings.json` |
 | AI Voice models and voices | `%AppData%\VoiceCtx\AiVoice\` |
+| Live translate models | `%AppData%\VoiceCtx\Translate\` |
 
 Voice CTX works entirely offline. It doesn't collect, record or upload any audio or data. To
 reset it, close the app from the tray and delete `settings.json`. To uninstall, delete
@@ -306,6 +389,11 @@ reset it, close the app from the tray and delete `settings.json`. To uninstall, 
 | **Noise cancellation is greyed out** | The bundled noise-removal component couldn't load. Re-download `VoiceCtx.exe`. |
 | **AI Voice switch is greyed out** | The AI Voice model pack isn't installed. See [AI Voice setup](#ai-voice-setup). |
 | **"Your PC can't keep up" in AI Voice** | The GPU is too slow or busy, so Voice CTX switches back to your normal voice for a few seconds. Close GPU-heavy apps, or check the status line names your dedicated GPU rather than the CPU. |
+| **Live translate says models aren't installed** | Install the Live translate model pack. See [Live translate setup](#live-translate-setup). |
+| **Live translate never speaks** | Pause for about half a second at the end of each sentence. Check the **Input level** moves. If the voice warning shows, install a Windows voice for the target language; until then translations only appear as subtitles. |
+| **Live translate is slow** | The status line says whether speech recognition is on the GPU or the CPU. On the CPU, each sentence takes several seconds longer. Update your graphics driver so Vulkan is available. |
+| **Translation picks up other sounds** | Use headphones, and turn on **Noise cancellation**. |
+| **Type to speak has no voices** | Add one in **Settings → Time & language → Speech → Add voices**, then restart Voice CTX. |
 | **Hotkey does nothing** | Another app already uses that combination. The status bar says which one. |
 | **SmartScreen warning when starting** | The exe isn't code-signed. Click **More info → Run anyway**, or build it yourself from source. |
 | **Window disappeared** | It's in the system tray. Click the purple or grey icon near the clock, which may be under the **^** arrow. |
@@ -355,6 +443,19 @@ This downloads the pinned upstream models, verifies their SHA-256 checksums and 
 ONNX. `convert_voice.py` (see [Add your own voices](#3-add-your-own-voices)) uses the same Python
 environment.
 
+**Building the Live translate models yourself (optional).** You need Python 3.10–3.12:
+
+```powershell
+cd tools/translate
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python build_models.py          # writes %AppData%\VoiceCtx\Translate
+```
+
+This downloads the pinned upstream models (about 1.7 GB), verifies their SHA-256 checksums and
+prepares the translator for fast CPU decoding.
+
 ## Project layout
 
 ```
@@ -364,10 +465,13 @@ src/VoiceCtx.Audio/     audio engine and DSP (no UI)
   Effects/              the voice effects + click-free effect switching
   Enhancement/          noise cancellation and studio sound
   AiVoice/              real-time RVC pipeline (ONNX Runtime + DirectML, GPU selection)
+  Speech/               Type to speak: Windows voices, mixing spoken lines into the mic path
+  Translate/            Live translate: speech detection, Whisper, NLLB translation
   Native/               rnnoise.dll (+ license)
 src/VoiceCtx.App/       WPF app: UI, tray icon, hotkeys, settings
-tests/VoiceCtx.Tests/   xUnit tests (effects, pitch accuracy, engine, AI Voice, settings)
+tests/VoiceCtx.Tests/   xUnit tests (effects, pitch accuracy, engine, AI Voice, speech, translate, settings)
 tools/aivoice/          Python tools that build and convert AI Voice models
+tools/translate/        Python tool that builds the Live translate models
 native/                 build script for rnnoise.dll
 licenses/               third-party license texts
 ```
@@ -375,13 +479,15 @@ licenses/               third-party license texts
 **How audio flows:**
 
 ```
-mic ─► noise cancel ─► studio sound ─► AI Voice ─► voice effect ─► volume ─► CABLE Input ─► (CABLE Output in your apps)
-                                                                      └─► monitor headphones (optional)
+mic ─► noise cancel ─► studio sound ─► + spoken lines ─► AI Voice ─► voice effect ─► volume ─► CABLE Input ─► (CABLE Output in your apps)
+                                             ▲                                         └─► monitor headphones (optional)
+                       Type to speak, Live translate
 ```
 
-The audio thread never waits on locks or allocates memory. AI Voice inference runs on its own
-worker thread, so a slow GPU can never stall your audio; if it can't keep up, you hear your
-normal voice instead.
+Live translate listens to your cleaned-up mic, and its spoken translations join the path at the
+same point as Type to speak lines. The audio thread never waits on locks or allocates memory. AI
+Voice inference and Live translate run on their own worker threads, so a slow GPU can never stall
+your audio; if AI Voice can't keep up, you hear your normal voice instead.
 
 ## Credits and licenses
 
@@ -395,6 +501,10 @@ It builds on great open-source work:
 - **RVC, HuBERT and RMVPE:** MIT.
 - **Built-in AI voices:** trained on the **CSTR VCTK Corpus** (University of Edinburgh, CC BY 4.0),
   with RVC models by Nekochu (Apache-2.0).
+- **Whisper.net, whisper.cpp and OpenAI Whisper:** MIT.
+- **Silero VAD:** MIT.
+- **Microsoft.ML.Tokenizers:** MIT.
+- **NLLB-200 (Meta AI):** CC BY-NC 4.0, non-commercial use only. ONNX conversion by Xenova.
 
 See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and the [licenses/](licenses) folder for
 details and full license texts.

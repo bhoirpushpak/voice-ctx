@@ -33,7 +33,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private EngineState _engineState;
     private string? _hotkeyWarning;
 
-    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice, TypeToSpeakViewModel typeToSpeak)
+    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice, TypeToSpeakViewModel typeToSpeak, LiveTranslateViewModel liveTranslate)
     {
         _devices = devices;
         _engine = engine;
@@ -41,6 +41,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         AiVoice.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
         TypeToSpeak = typeToSpeak;
         TypeToSpeak.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
+        LiveTranslate = liveTranslate;
+        LiveTranslate.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
         _dispatcher = Dispatcher.CurrentDispatcher;
         Effects = EffectOption.CreateCatalog(SelectEffect);
         OpenCableSiteCommand = new RelayCommand(() =>
@@ -60,6 +62,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Feature 3: type text and have it spoken into the mic path.</summary>
     public TypeToSpeakViewModel TypeToSpeak { get; }
+
+    /// <summary>Feature 4: speak in one language, be heard in another.</summary>
+    public LiveTranslateViewModel LiveTranslate { get; }
 
     public ObservableCollection<AudioDeviceInfo> Inputs { get; } = [];
     public ObservableCollection<AudioDeviceInfo> Outputs { get; } = [];
@@ -253,6 +258,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         AiVoice.Initialize(settings.AiVoiceEnabled, settings.AiVoiceId, settings.AiVoicePitchShift);
         TypeToSpeak.Initialize(settings.TtsVoiceId, settings.TtsRate, settings.TtsMuteMic);
+        LiveTranslate.Initialize(settings.TranslateEnabled, settings.TranslateFrom, settings.TranslateTo, settings.TranslateVoiceId, settings.TranslateKeepOriginal);
 
         await RefreshDevicesAsync();
         _meterTimer.Start();
@@ -280,6 +286,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TtsVoiceId = TypeToSpeak.SelectedVoiceId,
         TtsRate = TypeToSpeak.Rate,
         TtsMuteMic = TypeToSpeak.MuteMic,
+        TranslateEnabled = LiveTranslate.IsEnabled,
+        TranslateFrom = LiveTranslate.FromCode,
+        TranslateTo = LiveTranslate.ToCode,
+        TranslateVoiceId = LiveTranslate.VoiceId,
+        TranslateKeepOriginal = LiveTranslate.KeepOriginal,
     };
 
     /// <summary>Shown in the status line when the global hotkey could not be registered.</summary>
@@ -372,5 +383,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _meterTimer.Stop();
         AiVoice.Dispose();
         TypeToSpeak.Dispose();
+        LiveTranslate.Dispose();
     }
 }

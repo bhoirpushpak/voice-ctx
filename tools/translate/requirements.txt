@@ -1,0 +1,5 @@
+# Model build tooling for Voice CTX Live translate (not needed to run the app).
+# Only used to produce the tokenizer vocabulary; all models are downloaded and checksum-verified.
+transformers==4.46.3
+sentencepiece==0.2.0
+protobuf==5.28.3

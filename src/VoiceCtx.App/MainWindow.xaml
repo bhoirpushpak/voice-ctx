@@ -8,6 +8,7 @@
         WindowStartupLocation="CenterScreen" Icon="Assets/VoiceCtx.ico">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <app:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <app:EngineStateBrushConverter x:Key="StateBrush" />
     </Window.Resources>
 
@@ -25,8 +26,8 @@
                           IsChecked="{Binding IsOn, Mode=TwoWay}" ToolTip="Turn the voice effect on or off (Ctrl+Alt+V)" />
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="Voice CTX" FontSize="26" FontWeight="Bold" />
-                <TextBlock Style="{StaticResource Caption}" Margin="0"
-                           Text="Use “CABLE Output” as your mic in Discord, games or OBS · Ctrl+Alt+V effects · Ctrl+Alt+N noise cancel · Ctrl+Alt+A AI voice" />
+                <TextBlock Style="{StaticResource Caption}" Margin="0" TextWrapping="Wrap"
+                           Text="Use “CABLE Output” as your mic · Hotkeys Ctrl+Alt + V effects · N noise cancel · A AI voice · T type to speak · L translate" />
             </StackPanel>
         </DockPanel>
 
@@ -294,6 +295,95 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                             </DockPanel>
+                        </DockPanel>
+                    </TabItem>
+
+                    <TabItem Header="Live translate" DataContext="{Binding LiveTranslate}">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="4,0,0,12">
+                                <ToggleButton DockPanel.Dock="Right" Style="{StaticResource PowerToggle}"
+                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}" IsEnabled="{Binding ModelsInstalled}"
+                                              ToolTip="Turn Live translate on or off (Ctrl+Alt+L)" />
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Style="{StaticResource SectionTitle}" Text="Speak one language, be heard in another" Margin="0,0,0,2" />
+                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0"
+                                               Text="When you pause, what you said is translated and spoken into your mic, in your AI voice if AI Voice is on. Use headphones so the translation isn't picked up by your mic." />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <Border DockPanel.Dock="Top" Margin="4,0,4,12" Padding="14,10" CornerRadius="8"
+                                    Background="#33F2A93B" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
+                                    Visibility="{Binding ModelsInstalled, Converter={StaticResource InverseBoolToVisibility}}">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="SemiBold" Text="Live translate models aren't installed yet." />
+                                    <Run Text="Download the translator model pack (~1.6 GB) from the Releases page and extract it into:" />
+                                    <LineBreak />
+                                    <Run Text="{Binding ModelFolder, Mode=OneWay}" FontFamily="Consolas" />
+                                </TextBlock>
+                            </Border>
+
+                            <Grid DockPanel.Dock="Top" Margin="4,0,4,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Caption}" Text="I speak" />
+                                    <ComboBox ItemsSource="{Binding SourceLanguages}" SelectedItem="{Binding From}" MaxDropDownHeight="360" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Caption}" Text="Translate into" />
+                                    <ComboBox ItemsSource="{Binding TargetLanguages}" SelectedItem="{Binding To}" MaxDropDownHeight="360" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Style="{StaticResource Caption}" Text="Speaking voice" />
+                                    <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding Voice}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border DockPanel.Dock="Top" Margin="4,0,4,10" Padding="12,8" CornerRadius="8"
+                                    Background="#33F2A93B" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
+                                    Visibility="{Binding NoVoiceForTarget, Converter={StaticResource BoolToVisibility}}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource ActionButton}" Margin="10,0,0,0"
+                                            Content="Speech settings" Command="{Binding OpenSpeechSettingsCommand}" />
+                                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Center"
+                                               Text="No Windows voice is installed for this language, so translations will only be shown as text. Add one in Windows: Settings → Time &amp; language → Speech → Add voices." />
+                                </DockPanel>
+                            </Border>
+
+                            <DockPanel DockPanel.Dock="Top" Margin="4,0,4,10">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <Button Style="{StaticResource ActionButton}" Content="Clear" Command="{Binding ClearCommand}" />
+                                    <Button Style="{StaticResource ActionButton}" Content="Credits" Command="{Binding OpenCreditsCommand}" Margin="0" />
+                                </StackPanel>
+                                <CheckBox Content="Keep my real voice quietly underneath" IsChecked="{Binding KeepOriginal}" VerticalAlignment="Center" />
+                            </DockPanel>
+
+                            <TextBlock DockPanel.Dock="Bottom" Margin="4,8,4,0" Foreground="{StaticResource AccentBrush}" Text="{Binding Status}" TextWrapping="Wrap" />
+
+                            <ScrollViewer Margin="4,0,4,0" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Subtitles}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:SubtitleLine}">
+                                            <Border Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
+                                                <StackPanel>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Margin="0" Text="{Binding Time}" />
+                                                        <TextBlock Style="{StaticResource Caption}" Margin="0" Text="{Binding Languages}" />
+                                                    </DockPanel>
+                                                    <TextBlock Text="{Binding Original}" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                                    <TextBlock Text="{Binding Translation}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
                         </DockPanel>
                     </TabItem>
                 </TabControl>
