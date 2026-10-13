@@ -228,7 +228,8 @@
                         </DockPanel>
                     </TabItem>
 
-                    <TabItem x:Name="TypeToSpeakTab" Header="Type to speak" DataContext="{Binding TypeToSpeak}">
+                    <TabItem x:Name="TypeToSpeakTab" DataContext="{Binding TypeToSpeak}">
+                        <TabItem.Header><StackPanel Orientation="Horizontal"><TextBlock Text="Type to speak" VerticalAlignment="Center" /><Border Style="{StaticResource BetaBadge}"><TextBlock Text="BETA" FontSize="8" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" /></Border></StackPanel></TabItem.Header>
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Margin="4,0,4,12">
                                 <TextBlock Style="{StaticResource SectionTitle}" Text="Say it without speaking" Margin="0,0,0,2" />
@@ -301,7 +302,8 @@
                         </DockPanel>
                     </TabItem>
 
-                    <TabItem Header="Live translate" DataContext="{Binding LiveTranslate}">
+                    <TabItem DataContext="{Binding LiveTranslate}">
+                        <TabItem.Header><StackPanel Orientation="Horizontal"><TextBlock Text="Live translate" VerticalAlignment="Center" /><Border Style="{StaticResource BetaBadge}"><TextBlock Text="BETA" FontSize="8" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" /></Border></StackPanel></TabItem.Header>
                         <DockPanel>
                             <DockPanel DockPanel.Dock="Top" Margin="4,0,0,12">
                                 <ToggleButton DockPanel.Dock="Right" Style="{StaticResource PowerToggle}"

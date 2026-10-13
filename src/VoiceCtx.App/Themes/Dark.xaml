@@ -269,7 +269,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <Border x:Name="Bd" Padding="14,7" Margin="0,0,6,0" CornerRadius="8" Background="Transparent">
+                    <Border x:Name="Bd" Padding="10,7" Margin="0,0,4,0" CornerRadius="8" Background="Transparent">
                         <ContentPresenter ContentSource="Header" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -284,6 +284,16 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="BetaBadge" TargetType="Border">
+        <Setter Property="Margin" Value="5,0,0,0" />
+        <Setter Property="Padding" Value="3,0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+        <Setter Property="ToolTip" Value="Beta: still being worked on" />
     </Style>
 
     <!-- Text input -->
