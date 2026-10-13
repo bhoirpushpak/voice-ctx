@@ -216,8 +216,20 @@ public sealed class AiVoiceViewModel : ObservableObject, IDisposable
             Process.Start(new ProcessStartInfo(_service.Library.CreditsPath) { UseShellExecute = true });
     }
 
+    private string _heardAs = "";
+
+    /// <summary>For Type to speak and Live translate: which voice people actually hear.</summary>
+    public string HeardAs
+    {
+        get => _heardAs;
+        private set => SetField(ref _heardAs, value);
+    }
+
     private void UpdateStatus()
     {
+        HeardAs = IsEnabled && _selected != null
+            ? $"AI Voice is on, so this voice is converted and people hear it as “{_selected.Info.Name}”."
+            : "AI Voice is off, so people hear this Windows voice. Turn on AI Voice to speak in your AI voice.";
         FallingBehind = IsEnabled && _engine.AiVoiceFallingBehind;
         OnPropertyChanged(nameof(State));
         if (!ModelsInstalled) { Status = "Models not installed"; return; }

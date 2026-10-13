@@ -255,6 +255,9 @@
                                 </StackPanel>
                             </Grid>
 
+                            <TextBlock DockPanel.Dock="Top" Margin="4,-4,4,12" Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                       Text="{Binding DataContext.AiVoice.HeardAs, RelativeSource={RelativeSource AncestorType=Window}}" />
+
                             <Grid DockPanel.Dock="Top" Margin="4,0,4,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -339,10 +342,13 @@
                                     <ComboBox ItemsSource="{Binding TargetLanguages}" SelectedItem="{Binding To}" MaxDropDownHeight="360" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
-                                    <TextBlock Style="{StaticResource Caption}" Text="Speaking voice" />
+                                    <TextBlock Style="{StaticResource Caption}" Text="Reads the translation" />
                                     <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding Voice}" />
                                 </StackPanel>
                             </Grid>
+
+                            <TextBlock DockPanel.Dock="Top" Margin="4,0,4,10" Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                       Text="{Binding DataContext.AiVoice.HeardAs, RelativeSource={RelativeSource AncestorType=Window}}" />
 
                             <Border DockPanel.Dock="Top" Margin="4,0,4,10" Padding="12,8" CornerRadius="8"
                                     Background="#33F2A93B" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"

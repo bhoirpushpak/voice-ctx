@@ -29,11 +29,21 @@ public sealed class AiVoiceStage : IDisposable
     private volatile bool _resetRequested = true;
 
     private const double ShortHoldSeconds = 2, LongHoldSeconds = 5, RepeatWindowSeconds = 5;
+    private const double QuietSeconds = 0.2;
+    private const float QuietPeak = 0.003f;   // about −50 dBFS
+
+    private static bool IsQuiet(ReadOnlySpan<float> buffer)
+    {
+        foreach (float s in buffer)
+            if (s > QuietPeak || s < -QuietPeak) return false;
+        return true;
+    }
 
     // Audio-thread state.
     private long _clock;
     private long _holdUntil;
     private long _lastUnderrun = long.MinValue / 2;
+    private long _quietSamples;
     private float _wetGain;
     private bool _active;
     private bool _primed;
@@ -95,6 +105,7 @@ public sealed class AiVoiceStage : IDisposable
         {
             _input.Write(buffer);
             _signal.Set();
+            _quietSamples = IsQuiet(buffer) ? _quietSamples + buffer.Length : 0;
         }
 
         var wet = _wet.AsSpan(0, buffer.Length);
@@ -149,6 +160,9 @@ public sealed class AiVoiceStage : IDisposable
     {
         Underruns++;
         _primed = false;
+        // Nothing audible is being converted (e.g. Live translate muted the mic while the GPU is busy
+        // recognising speech): just re-prime, so a line spoken next isn't left in the dry voice.
+        if (_quietSamples >= _rate * QuietSeconds) return;
         bool recent = _clock - _lastUnderrun < _rate * RepeatWindowSeconds;
         _lastUnderrun = _clock;
         _holdUntil = _clock + (long)(_rate * (recent ? LongHoldSeconds : ShortHoldSeconds));

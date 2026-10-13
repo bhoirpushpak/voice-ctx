@@ -263,6 +263,12 @@ public sealed class LiveTranslateService : IDisposable
         string from = options.From;
         var target = Languages.FromWhisper(options.To) ?? Languages.All[0];
 
+        // Recognition bursts the GPU. Let the previous translation finish first, so AI Voice (on the same
+        // GPU) never misses a deadline mid-line and drops back to the plain Windows voice. That line has
+        // to finish before this one can be spoken anyway.
+        var wait = Stopwatch.StartNew();
+        while (_injector.IsSpeaking && _enabled && _running && wait.Elapsed < TimeSpan.FromSeconds(30)) Thread.Sleep(20);
+
         Transcription heard;
         heard = _whisper!.Transcribe(utterance, from);
         if (WhisperTranscriber.IsLikelyHallucination(heard, utterance.Length / (double)VadRate)) return;

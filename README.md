@@ -332,9 +332,10 @@ Prefer to build the models yourself? Use [`tools/translate/build_models.py`](too
 
 1. Open the **Live translate** tab.
 2. Choose **I speak** (or leave it on **Auto-detect**) and **Translate into**.
-3. Choose a **Speaking voice** for the target language. If Windows has no voice for that language,
-   Voice CTX warns you and only shows the translation as subtitles; click **Speech settings** to
-   add one.
+3. Choose the Windows voice that **Reads the translation**. With **AI Voice** on, that voice is
+   converted, so people hear your AI voice; the line under the pickers tells you which voice people
+   hear. If Windows has no voice for the target language, Voice CTX warns you and only shows the
+   translation as subtitles; click **Speech settings** to add one.
 4. Flip the switch to **ON**, or press **Ctrl+Alt+L**. The first time takes several seconds while
    the models load.
 5. Talk normally and **pause** at the end of each sentence. About 1.5–2 seconds later, the

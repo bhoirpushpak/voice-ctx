@@ -319,6 +319,27 @@ public class AiVoiceStageTests(Xunit.Abstractions.ITestOutputHelper log)
     }
 
     [Fact]
+    public void SlowInferenceDuringSilenceDoesNotLeaveNextSpeechDry()
+    {
+        // Live translate: the mic is muted while the GPU recognises speech, then a spoken line arrives.
+        var controls = new AiVoiceControls { Enabled = true };
+        var converter = new SineConverter(300);
+        using var service = new AiVoiceService(converter);
+        using var stage = new AiVoiceStage(Rate, Block, controls, service);
+
+        var output = RunRealtime(stage, b => b is >= 60 and < 150 ? new float[Block] : Dry(b), blocks: 220, perBlock: b =>
+        {
+            if (b == 80) converter.DelayMs = 250;
+            if (b == 110) converter.DelayMs = 0;
+        });
+
+        Assert.True(stage.Underruns > 0);
+        Assert.False(stage.IsFallingBehind);
+        // Speech resumes at block 150 and is converted (300 Hz) well within the 2 s a hold would last.
+        Assert.Equal(300, TestSignals.EstimateFrequency(output.AsSpan(190 * Block), Rate), 2.0);
+    }
+
+    [Fact]
     public void DisablingReturnsBitExactDrySignal()
     {
         var controls = new AiVoiceControls { Enabled = true };
