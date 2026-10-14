@@ -6,6 +6,7 @@ using VoiceCtx.App.Services;
 using VoiceCtx.App.ViewModels;
 using VoiceCtx.Audio.AiVoice;
 using VoiceCtx.Audio.Engine;
+using VoiceCtx.Audio.Speech;
 using VoiceCtx.Audio.Translate;
 
 namespace VoiceCtx.App;
@@ -26,6 +27,7 @@ public partial class App : Application
     private GlobalHotkey? _translateHotkey;
     private LiveTranslateService? _translate;
     private AiVoiceService? _aiVoice;
+    private SpeechService? _speech;
     private DispatcherTimer? _saveTimer;
     private bool _exiting;
 
@@ -47,9 +49,12 @@ public partial class App : Application
         _devices = new DeviceService();
         _aiVoice = new AiVoiceService(new VoiceLibrary(VoiceLibrary.DefaultRoot));
         _engine = new AudioEngine(_devices, _aiVoice);
-        _translate = new LiveTranslateService(new TranslateLibrary(TranslateLibrary.DefaultRoot), _engine.Speech);
+        _speech = new SpeechService(new SpeechLibrary(SpeechLibrary.DefaultRoot));
+        _translate = new LiveTranslateService(new TranslateLibrary(TranslateLibrary.DefaultRoot), _engine.Speech, _speech);
         _engine.AttachTranslator(_translate);
-        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine), new TypeToSpeakViewModel(_engine.Speech), new LiveTranslateViewModel(_translate));
+        var speechVoices = new SpeechVoicesViewModel(_speech, _engine);
+        _viewModel = new MainViewModel(_devices, _engine, new AiVoiceViewModel(_aiVoice, _engine), speechVoices,
+            new TypeToSpeakViewModel(_engine.Speech, _speech, speechVoices), new LiveTranslateViewModel(_translate, _speech, speechVoices));
 
         _window = new MainWindow { DataContext = _viewModel };
         _window.Closing += OnWindowClosing;
@@ -140,6 +145,7 @@ public partial class App : Application
         _engine?.Dispose();
         _aiVoice?.Dispose();
         _translate?.Dispose();
+        _speech?.Dispose();
         _devices?.Dispose();
         _instance?.Dispose();
         base.OnExit(e);

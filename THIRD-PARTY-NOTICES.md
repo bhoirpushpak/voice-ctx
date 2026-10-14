@@ -42,6 +42,23 @@ The model pack contains its own `CREDITS.txt`, which the app's **Credits** butto
 
 The model pack contains its own `CREDITS.txt`, which the Live translate tab's **Credits** button opens.
 
+## Speech model pack (separate optional download)
+
+Used by Type to speak and Live translate to speak lines in a voice cloned from a short recording.
+
+| Component | License | Source |
+|---|---|---|
+| Kyutai Pocket TTS: English, French, German, Spanish, Italian, Portuguese, Dutch (exported to ONNX and quantized to 8-bit by `tools/tts`) | CC BY 4.0 | [kyutai/pocket-tts](https://huggingface.co/kyutai/pocket-tts), code [kyutai-labs/pocket-tts](https://github.com/kyutai-labs/pocket-tts) (MIT) |
+| Pocket TTS Hindi by Saryps Labs (trained with AI4Bharat IndicVoices and Kathbath data; ONNX conversion by Jim Grimsby Jr.) | CC BY 4.0 | [saryps-labs/pocket-tts-hindi](https://huggingface.co/saryps-labs/pocket-tts-hindi) |
+| Ready-made voices "Narrator (male)" (VCTK p226) and "Presenter (female)" (VCTK p231), cleaned up by Kyutai | CC BY 4.0 | CSTR VCTK Corpus, University of Edinburgh, via [kyutai/tts-voices](https://huggingface.co/kyutai/tts-voices) |
+| Runtime design: the ONNX graph layout and generation loop follow PocketTTS.cpp | MIT | [VolgaGerm/PocketTTS.cpp](https://github.com/VolgaGerm/PocketTTS.cpp) |
+
+> **Only clone voices you have permission to use.** Kyutai's terms prohibit cloning or
+> impersonating a voice without the speaker's explicit, lawful consent, and using synthetic speech
+> to deceive.
+
+The model pack contains its own `CREDITS.txt`, which the **Credits** button opens.
+
 ## Optional: VB-Audio Virtual Cable
 
 VB-Audio Virtual Cable is **not** included. It is a separate free product from VB-Audio Software

@@ -10,6 +10,55 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <app:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <app:EngineStateBrushConverter x:Key="StateBrush" />
+
+        <!-- Shared by Type to speak and Live translate: the voice lines are spoken in. -->
+        <DataTemplate DataType="{x:Type vm:SpeechVoicesViewModel}">
+            <StackPanel>
+                <Border Margin="0,0,0,10" Padding="14,10" CornerRadius="8"
+                        Background="#33F2A93B" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
+                        Visibility="{Binding ModelsInstalled, Converter={StaticResource InverseBoolToVisibility}}">
+                    <TextBlock TextWrapping="Wrap">
+                        <Run FontWeight="SemiBold" Text="Speech models aren't installed yet." />
+                        <Run Text="Build them with tools/tts/build_models.py, or extract the speech model pack into:" />
+                        <LineBreak />
+                        <Run Text="{Binding ModelFolder, Mode=OneWay}" FontFamily="Consolas" />
+                    </TextBlock>
+                </Border>
+
+                <TextBlock Style="{StaticResource Caption}" Text="Voice" />
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="10,0,0,0">
+                        <Button Style="{StaticResource ActionButton}" Content="{Binding RecordButtonText}" Command="{Binding RecordCommand}"
+                                IsEnabled="{Binding ModelsInstalled}" ToolTip="Record about 10 seconds of your voice" />
+                        <Button Style="{StaticResource ActionButton}" Content="Import…" Command="{Binding ImportCommand}"
+                                IsEnabled="{Binding ModelsInstalled}" ToolTip="Use a WAV recording (5–20 seconds of clear speech)" />
+                        <Button Style="{StaticResource ActionButton}" Content="Delete" Command="{Binding DeleteCommand}" Margin="0"
+                                Visibility="{Binding CanDelete, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                    <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding Selected}" IsEnabled="{Binding ModelsInstalled}" />
+                </DockPanel>
+
+                <Border Margin="0,10,0,0" Padding="12,10" CornerRadius="8" Background="{StaticResource BackgroundBrush}"
+                        BorderBrush="{StaticResource AccentBrush}" BorderThickness="1"
+                        Visibility="{Binding IsRecording, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,4" Text="Read this out loud in your normal voice, then click Stop:" />
+                        <TextBlock Text="{Binding Script}" FontSize="15" TextWrapping="Wrap" />
+                        <DockPanel Margin="0,10,0,0">
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Margin="10,0,0,0"
+                                       Text="{Binding RecordedSeconds, StringFormat={}{0:0} s}" />
+                            <ProgressBar Style="{StaticResource Meter}" VerticalAlignment="Center"
+                                         Maximum="{Binding MaxSeconds}" Value="{Binding RecordedSeconds, Mode=OneWay}" />
+                        </DockPanel>
+                        <ProgressBar Style="{StaticResource Meter}" Height="4" Margin="0,6,0,0"
+                                     Value="{Binding DataContext.InputLevel, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource AccentBrush}" Text="{Binding Message}" />
+                <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap" Text="{Binding Consent}" />
+            </StackPanel>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid Margin="20">
@@ -234,30 +283,14 @@
                             <StackPanel DockPanel.Dock="Top" Margin="4,0,4,12">
                                 <TextBlock Style="{StaticResource SectionTitle}" Text="Say it without speaking" Margin="0,0,0,2" />
                                 <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0"
-                                           Text="Type a line and press Enter. It's spoken into your mic, so it goes through AI Voice and voice effects just like your own voice. Ctrl+Alt+T jumps here from anywhere." />
+                                           Text="Type a line and press Enter. It's spoken into your mic in your chosen voice, and voice effects still apply. Ctrl+Alt+T jumps here from anywhere." />
                             </StackPanel>
 
-                            <Grid DockPanel.Dock="Top" Margin="4,0,4,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="16" />
-                                    <ColumnDefinition Width="170" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource Caption}" Text="Speaking voice (installed in Windows)" />
-                                    <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <DockPanel>
-                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding RateText}" />
-                                        <TextBlock Style="{StaticResource Caption}" Text="Speed" />
-                                    </DockPanel>
-                                    <Slider Minimum="0.5" Maximum="2" Value="{Binding Rate}" Margin="0,6,0,0" />
-                                </StackPanel>
-                            </Grid>
-
-                            <TextBlock DockPanel.Dock="Top" Margin="4,-4,4,12" Style="{StaticResource Caption}" TextWrapping="Wrap"
-                                       Text="{Binding DataContext.AiVoice.HeardAs, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <StackPanel DockPanel.Dock="Top" Margin="4,0,4,10" HorizontalAlignment="Left" Width="220">
+                                <TextBlock Style="{StaticResource Caption}" Text="Language" />
+                                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" />
+                            </StackPanel>
+                            <ContentControl DockPanel.Dock="Top" Margin="4,0,4,12" Content="{Binding Voices}" Focusable="False" />
 
                             <Grid DockPanel.Dock="Top" Margin="4,0,4,8">
                                 <Grid.ColumnDefinitions>
@@ -277,12 +310,6 @@
                                 <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource AccentBrush}" Text="{Binding Status}" TextWrapping="Wrap" MaxWidth="320" />
                                 <CheckBox Content="Mute my mic while a line is spoken" IsChecked="{Binding MuteMic}" />
                             </DockPanel>
-
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="4,10,4,0">
-                                <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0"
-                                           Text="Need another language or voice? Add one in Windows:" />
-                                <Button Style="{StaticResource ActionButton}" Content="Speech settings" Command="{Binding OpenSpeechSettingsCommand}" />
-                            </StackPanel>
 
                             <DockPanel Margin="4,0,4,0">
                                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Text="Recent lines (click to say again)" />
@@ -312,7 +339,7 @@
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock Style="{StaticResource SectionTitle}" Text="Speak one language, be heard in another" Margin="0,0,0,2" />
                                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0"
-                                               Text="When you pause, what you said is translated and spoken into your mic, in your AI voice if AI Voice is on. Use headphones so the translation isn't picked up by your mic." />
+                                               Text="When you pause, what you said is translated and spoken into your mic in your chosen voice. Use headphones so the translation isn't picked up by your mic." />
                                 </StackPanel>
                             </DockPanel>
 
@@ -332,8 +359,6 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="12" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="12" />
-                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource Caption}" Text="I speak" />
@@ -343,24 +368,15 @@
                                     <TextBlock Style="{StaticResource Caption}" Text="Translate into" />
                                     <ComboBox ItemsSource="{Binding TargetLanguages}" SelectedItem="{Binding To}" MaxDropDownHeight="360" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Style="{StaticResource Caption}" Text="Reads the translation" />
-                                    <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding Voice}" />
-                                </StackPanel>
                             </Grid>
 
-                            <TextBlock DockPanel.Dock="Top" Margin="4,0,4,10" Style="{StaticResource Caption}" TextWrapping="Wrap"
-                                       Text="{Binding DataContext.AiVoice.HeardAs, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <ContentControl DockPanel.Dock="Top" Margin="4,0,4,10" Content="{Binding Voices}" Focusable="False" />
 
                             <Border DockPanel.Dock="Top" Margin="4,0,4,10" Padding="12,8" CornerRadius="8"
                                     Background="#33F2A93B" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
                                     Visibility="{Binding NoVoiceForTarget, Converter={StaticResource BoolToVisibility}}">
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource ActionButton}" Margin="10,0,0,0"
-                                            Content="Speech settings" Command="{Binding OpenSpeechSettingsCommand}" />
-                                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Center"
-                                               Text="No Windows voice is installed for this language, so translations will only be shown as text. Add one in Windows: Settings → Time &amp; language → Speech → Add voices." />
-                                </DockPanel>
+                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center"
+                                           Text="No speech model is installed for this language, so translations are only shown as text." />
                             </Border>
 
                             <DockPanel DockPanel.Dock="Top" Margin="4,0,4,10">

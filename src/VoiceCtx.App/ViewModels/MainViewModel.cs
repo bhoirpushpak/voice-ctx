@@ -33,12 +33,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private EngineState _engineState;
     private string? _hotkeyWarning;
 
-    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice, TypeToSpeakViewModel typeToSpeak, LiveTranslateViewModel liveTranslate)
+    public MainViewModel(DeviceService devices, AudioEngine engine, AiVoiceViewModel aiVoice, SpeechVoicesViewModel speechVoices,
+        TypeToSpeakViewModel typeToSpeak, LiveTranslateViewModel liveTranslate)
     {
         _devices = devices;
         _engine = engine;
         AiVoice = aiVoice;
         AiVoice.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
+        SpeechVoices = speechVoices;
+        SpeechVoices.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
         TypeToSpeak = typeToSpeak;
         TypeToSpeak.SettingsChanged += (_, _) => SettingsChanged?.Invoke(this, EventArgs.Empty);
         LiveTranslate = liveTranslate;
@@ -59,6 +62,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>The separate AI Voice feature (its own tab).</summary>
     public AiVoiceViewModel AiVoice { get; }
+
+    /// <summary>The voice Type to speak and Live translate speak in (shared).</summary>
+    public SpeechVoicesViewModel SpeechVoices { get; }
 
     /// <summary>Feature 3: type text and have it spoken into the mic path.</summary>
     public TypeToSpeakViewModel TypeToSpeak { get; }
@@ -257,8 +263,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(name);
 
         AiVoice.Initialize(settings.AiVoiceEnabled, settings.AiVoiceId, settings.AiVoicePitchShift);
-        TypeToSpeak.Initialize(settings.TtsVoiceId, settings.TtsRate, settings.TtsMuteMic);
-        LiveTranslate.Initialize(settings.TranslateEnabled, settings.TranslateFrom, settings.TranslateTo, settings.TranslateVoiceId, settings.TranslateKeepOriginal);
+        SpeechVoices.Initialize(settings.SpeechVoiceId);
+        TypeToSpeak.Initialize(settings.TtsLanguage, settings.TtsMuteMic);
+        LiveTranslate.Initialize(settings.TranslateEnabled, settings.TranslateFrom, settings.TranslateTo, settings.TranslateKeepOriginal);
 
         await RefreshDevicesAsync();
         _meterTimer.Start();
@@ -283,13 +290,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         AiVoiceEnabled = AiVoice.IsEnabled,
         AiVoiceId = AiVoice.SelectedVoiceId,
         AiVoicePitchShift = AiVoice.PitchShift,
-        TtsVoiceId = TypeToSpeak.SelectedVoiceId,
-        TtsRate = TypeToSpeak.Rate,
+        SpeechVoiceId = SpeechVoices.SelectedId,
+        TtsLanguage = TypeToSpeak.LanguageCode,
         TtsMuteMic = TypeToSpeak.MuteMic,
         TranslateEnabled = LiveTranslate.IsEnabled,
         TranslateFrom = LiveTranslate.FromCode,
         TranslateTo = LiveTranslate.ToCode,
-        TranslateVoiceId = LiveTranslate.VoiceId,
         TranslateKeepOriginal = LiveTranslate.KeepOriginal,
     };
 
@@ -382,6 +388,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         _meterTimer.Stop();
         AiVoice.Dispose();
+        SpeechVoices.Dispose();
         TypeToSpeak.Dispose();
         LiveTranslate.Dispose();
     }

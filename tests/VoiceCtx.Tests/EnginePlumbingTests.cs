@@ -65,7 +65,8 @@ public class OutputSinkTests
         var sink = new OutputSink(44100, 48000, 441, 720, 2880);
         var input = TestSignals.Sine(440, 44100, 441);
         var output = new float[480];
-        for (int i = 0; i < 10; i++) { sink.Push(input); sink.Pull(output); }
+        // Warm up long enough for tiered JIT to finish recompiling the hot path (it can allocate).
+        for (int i = 0; i < 2000; i++) { sink.Push(input); sink.Pull(output); }
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 1000; i++) { sink.Push(input); sink.Pull(output); }
         Assert.Equal(before, GC.GetAllocatedBytesForCurrentThread());

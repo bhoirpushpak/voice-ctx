@@ -34,6 +34,7 @@ public sealed class AudioEngine : IDisposable
     private int _rebuildRequested;
     private volatile float _masterVolume = 1f;
     private volatile float _inputLevel;
+    private SpscRingBuffer? _recording;
     private bool _disposed;
 
     public AudioEngine(DeviceService devices, AiVoiceService? aiVoice = null)
@@ -46,8 +47,33 @@ public sealed class AudioEngine : IDisposable
     /// <summary>Connects Live translate so it hears the cleaned-up mic. Call before <see cref="Start"/>.</summary>
     public void AttachTranslator(LiveTranslateService translate) => _translate = translate;
 
-    /// <summary>Synthesized speech (Type to speak, Live translate) mixed into the mic path before AI Voice.</summary>
+    /// <summary>Synthesized speech (Type to speak, Live translate) mixed into the mic path after AI Voice.</summary>
     public SpeechInjector Speech { get; } = new();
+
+    /// <summary>
+    /// Starts copying the cleaned-up mic (after noise cancellation) into a buffer, up to
+    /// <paramref name="maxSeconds"/>. Returns the sample rate, or 0 when no mic is running.
+    /// </summary>
+    public int StartRecording(double maxSeconds)
+    {
+        var pipeline = _pipeline;
+        if (pipeline == null || pipeline.InputRate <= 0) return 0;
+        Volatile.Write(ref _recording, new SpscRingBuffer((int)(pipeline.InputRate * maxSeconds)));
+        return pipeline.InputRate;
+    }
+
+    /// <summary>Seconds recorded so far.</summary>
+    public double RecordedSeconds => Volatile.Read(ref _recording) is { } r && _pipeline is { InputRate: > 0 } p ? (double)r.Count / p.InputRate : 0;
+
+    /// <summary>Stops recording and returns what was captured (at the rate StartRecording returned).</summary>
+    public float[] StopRecording()
+    {
+        var ring = Interlocked.Exchange(ref _recording, null);
+        if (ring == null) return [];
+        var samples = new float[ring.Count];
+        ring.Read(samples);
+        return samples;
+    }
 
     /// <summary>AI Voice on/off and pitch shift; applied after mic enhancement, before voice effects.</summary>
     public AiVoiceControls AiVoice { get; } = new();
@@ -176,9 +202,12 @@ public sealed class AudioEngine : IDisposable
         _inputLevel = Math.Max(Math.Min(peak, 1f), _inputLevel * decay);
 
         pipeline.Enhancer.Process(block);
+        Volatile.Read(ref _recording)?.Write(block);
         _translate?.Tap(block);
-        pipeline.Speech.Process(block);
         pipeline.AiVoice?.Process(block);
+        // Spoken lines (Type to speak, Live translate) are already in your chosen voice: they skip
+        // AI Voice but still get the voice effect. Mic muting while they play applies here too.
+        pipeline.Speech.Process(block);
         pipeline.Effects.Process(block);
 
         float volume = _masterVolume;

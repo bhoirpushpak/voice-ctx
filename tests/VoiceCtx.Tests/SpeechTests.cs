@@ -116,32 +116,3 @@ public class SpeechStageTests
         Assert.Equal(before, GC.GetAllocatedBytesForCurrentThread());
     }
 }
-
-public class WindowsTtsTests
-{
-    [Fact]
-    public async Task SynthesizesSpeechWithInstalledVoice()
-    {
-        var voice = WindowsTts.InstalledVoices().FirstOrDefault();
-        if (voice == null) return;   // machine without voices: nothing to check
-
-        var clip = await new WindowsTts().SynthesizeAsync("Hello from Voice CTX.", voice.Id);
-
-        Assert.InRange(clip.SampleRate, 8000, 48000);
-        double seconds = clip.Samples.Length / (double)clip.SampleRate;
-        Assert.InRange(seconds, 0.5, 5);
-        Assert.All(clip.Samples, s => Assert.True(float.IsFinite(s) && Math.Abs(s) <= 1f));
-        Assert.True(TestSignals.Rms(clip.Samples) > 0.01);
-    }
-
-    [Fact]
-    public void FindsVoiceByLanguage()
-    {
-        var voices = WindowsTts.InstalledVoices();
-        if (voices.Count == 0) return;
-        var first = voices[0];
-        Assert.Equal(first.Language, WindowsTts.FindVoiceForLanguage(first.Language)!.Language);
-        Assert.NotNull(WindowsTts.FindVoiceForLanguage(first.Language.Split('-')[0]));
-        Assert.Null(WindowsTts.FindVoiceForLanguage("xx-XX"));
-    }
-}

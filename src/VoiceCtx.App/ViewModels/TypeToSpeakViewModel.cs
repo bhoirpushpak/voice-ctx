@@ -1,52 +1,53 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Threading;
 using VoiceCtx.Audio.Speech;
 
 namespace VoiceCtx.App.ViewModels;
 
-/// <summary>"Type to speak": text is spoken by a Windows voice into the live mic path.</summary>
+/// <summary>"Type to speak": text is spoken in your chosen voice (Pocket TTS) into the live mic path.</summary>
 public sealed class TypeToSpeakViewModel : ObservableObject, IDisposable
 {
     private const int MaxHistory = 20;
 
     private readonly SpeechInjector _injector;
-    private readonly WindowsTts _tts = new();
+    private readonly SpeechService _speech;
     private readonly DispatcherTimer _statusTimer;
-    private TtsVoice? _selectedVoice;
+    private SpeechLanguage? _language;
     private string _text = "";
-    private double _rate = 1.0;
     private bool _muteMic = true;
     private string _status = "";
     private bool _isSpeaking;
     private int _pending;
 
-    public TypeToSpeakViewModel(SpeechInjector injector)
+    public TypeToSpeakViewModel(SpeechInjector injector, SpeechService speech, SpeechVoicesViewModel voices)
     {
         _injector = injector;
+        _speech = speech;
+        Voices = voices;
+        Voices.VoiceChanged += (_, _) => WarmUp();
         SpeakCommand = new RelayCommand(() => _ = SpeakAsync(Text, clearText: true));
         StopCommand = new RelayCommand(Stop);
-        OpenSpeechSettingsCommand = new RelayCommand(() =>
-            Process.Start(new ProcessStartInfo("ms-settings:speech") { UseShellExecute = true }));
         _statusTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Background,
-            (_, _) => IsSpeaking = _injector.IsSpeaking || _pending > 0, Dispatcher.CurrentDispatcher);
+            (_, _) => IsSpeaking = _injector.IsSpeaking, Dispatcher.CurrentDispatcher);
     }
 
     public event EventHandler? SettingsChanged;
 
-    public ObservableCollection<TtsVoice> Voices { get; } = [];
+    public SpeechVoicesViewModel Voices { get; }
+    public ObservableCollection<SpeechLanguage> Languages { get; } = [];
     public ObservableCollection<SpokenLine> History { get; } = [];
     public ICommand SpeakCommand { get; }
     public ICommand StopCommand { get; }
-    public ICommand OpenSpeechSettingsCommand { get; }
 
-    public TtsVoice? SelectedVoice
+    public SpeechLanguage? Language
     {
-        get => _selectedVoice;
+        get => _language;
         set
         {
-            if (SetField(ref _selectedVoice, value)) SettingsChanged?.Invoke(this, EventArgs.Empty);
+            if (!SetField(ref _language, value)) return;
+            WarmUp();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -55,20 +56,6 @@ public sealed class TypeToSpeakViewModel : ObservableObject, IDisposable
         get => _text;
         set => SetField(ref _text, value);
     }
-
-    /// <summary>Speaking rate (0.5–2.0).</summary>
-    public double Rate
-    {
-        get => _rate;
-        set
-        {
-            if (!SetField(ref _rate, Math.Round(Math.Clamp(value, 0.5, 2.0), 1))) return;
-            OnPropertyChanged(nameof(RateText));
-            SettingsChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    public string RateText => $"{Rate:0.0}×";
 
     /// <summary>Mute your real mic while a line is being spoken.</summary>
     public bool MuteMic
@@ -99,39 +86,42 @@ public sealed class TypeToSpeakViewModel : ObservableObject, IDisposable
         private set => SetField(ref _status, value);
     }
 
-    public string? SelectedVoiceId => SelectedVoice?.Id;
+    public string? LanguageCode => _language?.Code;
 
-    public void Initialize(string? voiceId, double rate, bool muteMic)
+    public void Initialize(string? languageCode, bool muteMic)
     {
-        Voices.Clear();
-        foreach (var v in WindowsTts.InstalledVoices()) Voices.Add(v);
-        _selectedVoice = Voices.FirstOrDefault(v => v.Id == voiceId)
-            ?? Voices.FirstOrDefault(v => v.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
-            ?? Voices.FirstOrDefault();
-        _rate = Math.Clamp(rate <= 0 ? 1.0 : rate, 0.5, 2.0);
+        Languages.Clear();
+        foreach (var l in _speech.Languages) Languages.Add(l);
+        _language = Languages.FirstOrDefault(l => l.Code == languageCode) ?? Languages.FirstOrDefault();
         _muteMic = muteMic;
         _injector.DuckGain = muteMic ? 0f : 1f;
-        foreach (var name in new[] { nameof(SelectedVoice), nameof(Rate), nameof(RateText), nameof(MuteMic) }) OnPropertyChanged(name);
-        if (Voices.Count == 0) Status = "No Windows voices installed. Add one in Settings → Time & language → Speech.";
+        foreach (var name in new[] { nameof(Language), nameof(MuteMic) }) OnPropertyChanged(name);
         _statusTimer.Start();
     }
 
-    /// <summary>Speaks text with the selected voice (also used to replay history).</summary>
+    /// <summary>Speaks text in the selected language and voice (also used to replay history).</summary>
     public async Task SpeakAsync(string text, bool clearText)
     {
         text = text.Trim();
-        if (text.Length == 0 || SelectedVoice == null) return;
+        if (text.Length == 0 || _language == null) return;
+        if (Voices.Selected == null)
+        {
+            Status = "Record your voice first (or pick a ready-made voice).";
+            return;
+        }
         if (clearText) Text = "";
         Interlocked.Increment(ref _pending);
+        Status = "Preparing…";
         try
         {
-            var clip = await _tts.SynthesizeAsync(text, SelectedVoice.Id, Rate);
+            var clip = await _speech.SynthesizeAsync(text, _language.Code, Voices.Selected.Id);
             _injector.Enqueue(clip);
             if (History.FirstOrDefault()?.Text != text)
             {
                 History.Insert(0, new SpokenLine(text, this));
                 while (History.Count > MaxHistory) History.RemoveAt(History.Count - 1);
             }
+            if (Status == "Preparing…") Status = "";
         }
         catch (Exception ex)
         {
@@ -147,6 +137,11 @@ public sealed class TypeToSpeakViewModel : ObservableObject, IDisposable
     {
         _injector.Clear();
         Status = "";
+    }
+
+    private void WarmUp()
+    {
+        if (_language != null && Voices.Selected != null) _ = _speech.WarmUpAsync(_language.Code, Voices.Selected.Id);
     }
 
     public void Dispose() => _statusTimer.Stop();

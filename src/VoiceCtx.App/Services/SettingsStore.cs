@@ -23,13 +23,12 @@ public sealed class AppSettings
     public bool AiVoiceEnabled { get; set; }
     public string? AiVoiceId { get; set; }
     public double AiVoicePitchShift { get; set; }
-    public string? TtsVoiceId { get; set; }
-    public double TtsRate { get; set; } = 1.0;
+    public string? SpeechVoiceId { get; set; }
+    public string? TtsLanguage { get; set; }
     public bool TtsMuteMic { get; set; } = true;
     public bool TranslateEnabled { get; set; }
     public string TranslateFrom { get; set; } = "auto";
     public string TranslateTo { get; set; } = "en";
-    public string? TranslateVoiceId { get; set; }
     public bool TranslateKeepOriginal { get; set; }
 }
 
@@ -61,7 +60,6 @@ public sealed class SettingsStore(string path)
             settings.NoiseReduction = Math.Clamp(settings.NoiseReduction, 0, 100);
             settings.StudioStrength = Math.Clamp(settings.StudioStrength, 0, 100);
             settings.AiVoicePitchShift = Math.Clamp(settings.AiVoicePitchShift, -12, 12);
-            settings.TtsRate = Math.Clamp(settings.TtsRate, 0.5, 2.0);
             return settings;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or NotSupportedException)

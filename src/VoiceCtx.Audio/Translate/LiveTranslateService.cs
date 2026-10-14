@@ -22,10 +22,8 @@ public sealed class LiveTranslateOptions
     /// <summary>Whisper code of the language to translate into.</summary>
     public string To { get; set; } = "en";
 
-    /// <summary>Windows voice used to speak translations (null = best match for the target language).</summary>
+    /// <summary>Voice translations are spoken in (null = yours, else the first ready-made voice).</summary>
     public string? VoiceId { get; set; }
-
-    public double SpeakingRate { get; set; } = 1.0;
 
     /// <summary>Keep your real voice quietly under the translation instead of muting it.</summary>
     public bool KeepOriginal
@@ -57,15 +55,15 @@ public sealed class TranslateLibrary(string root)
 
 /// <summary>
 /// Live translate: listens to your (cleaned-up) mic, cuts it into sentences, transcribes with
-/// Whisper, translates with NLLB, speaks the result with a Windows voice and injects it into the
-/// mic path, where AI Voice and voice effects apply. Your real mic is muted (or kept quiet) while on.
+/// Whisper, translates with NLLB, speaks the result in your chosen voice (Pocket TTS) and injects it
+/// into the mic path, where voice effects apply. Your real mic is muted (or kept quiet) while on.
 /// </summary>
 public sealed class LiveTranslateService : IDisposable
 {
     private const int VadRate = SpeechSegmenter.SampleRate;
 
     private readonly SpeechInjector _injector;
-    private readonly WindowsTts _tts = new();
+    private readonly SpeechService _speech;
     private readonly BlockingCollection<float[]> _utterances = new(boundedCapacity: 8);
     private readonly object _modelLock = new();
     private SpscRingBuffer? _tap;
@@ -79,10 +77,11 @@ public sealed class LiveTranslateService : IDisposable
     private volatile bool _enabled;
     private bool _disposed;
 
-    public LiveTranslateService(TranslateLibrary library, SpeechInjector injector)
+    public LiveTranslateService(TranslateLibrary library, SpeechInjector injector, SpeechService speech)
     {
         Library = library;
         _injector = injector;
+        _speech = speech;
         Status = library.Installed ? TranslateStatus.Off : TranslateStatus.NotInstalled;
         StatusMessage = library.Installed ? "Off" : "Live translate models are not installed";
     }
@@ -120,6 +119,9 @@ public sealed class LiveTranslateService : IDisposable
         try
         {
             await Task.Run(LoadModels).ConfigureAwait(false);
+            // Load the target language's speech model and encode the voice now, not on the first line.
+            if (Languages.FromWhisper(Options.To) is { } target && _speech.FindLanguage(target.Whisper) != null)
+                await _speech.WarmUpAsync(target.Whisper, Options.VoiceId).ConfigureAwait(false);
             _enabled = true;
             ApplyMicGain();
             StartWorkers();
@@ -263,12 +265,6 @@ public sealed class LiveTranslateService : IDisposable
         string from = options.From;
         var target = Languages.FromWhisper(options.To) ?? Languages.All[0];
 
-        // Recognition bursts the GPU. Let the previous translation finish first, so AI Voice (on the same
-        // GPU) never misses a deadline mid-line and drops back to the plain Windows voice. That line has
-        // to finish before this one can be spoken anyway.
-        var wait = Stopwatch.StartNew();
-        while (_injector.IsSpeaking && _enabled && _running && wait.Elapsed < TimeSpan.FromSeconds(30)) Thread.Sleep(20);
-
         Transcription heard;
         heard = _whisper!.Transcribe(utterance, from);
         if (WhisperTranscriber.IsLikelyHallucination(heard, utterance.Length / (double)VadRate)) return;
@@ -279,10 +275,9 @@ public sealed class LiveTranslateService : IDisposable
             translation = _nllb!.Translate(heard.Text, source.Nllb, target.Nllb);
         if (string.IsNullOrWhiteSpace(translation)) return;
 
-        string? voiceId = options.VoiceId ?? WindowsTts.FindVoiceForLanguage(target.Voice)?.Id;
-        if (voiceId != null)
+        if (_speech.FindLanguage(target.Whisper) != null && _speech.ResolveVoice(options.VoiceId) != null)
         {
-            var clip = _tts.SynthesizeAsync(translation, voiceId, options.SpeakingRate).GetAwaiter().GetResult();
+            var clip = _speech.SynthesizeAsync(translation, target.Whisper, options.VoiceId).GetAwaiter().GetResult();
             if (_enabled) _injector.Enqueue(clip);
         }
 

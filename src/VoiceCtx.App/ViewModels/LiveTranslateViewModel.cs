@@ -11,28 +11,29 @@ namespace VoiceCtx.App.ViewModels;
 /// <summary>A subtitle line shown in the Live translate tab.</summary>
 public sealed record SubtitleLine(string Original, string Translation, string Languages, string Time);
 
-/// <summary>Feature 4: speak → transcribe → translate → Windows voice → (AI Voice) → cable.</summary>
+/// <summary>Feature 4: speak → transcribe → translate → your chosen voice (Pocket TTS) → cable.</summary>
 public sealed class LiveTranslateViewModel : ObservableObject, IDisposable
 {
     private const int MaxSubtitles = 50;
 
     private readonly LiveTranslateService _service;
+    private readonly SpeechService _speech;
     private readonly Dispatcher _dispatcher;
     private Language _from = Languages.Auto;
     private Language _to = Languages.All[0];
-    private TtsVoice? _voice;
     private bool _keepOriginal;
     private string _status = "";
     private bool _busy;
 
-    public LiveTranslateViewModel(LiveTranslateService service)
+    public LiveTranslateViewModel(LiveTranslateService service, SpeechService speech, SpeechVoicesViewModel voices)
     {
         _service = service;
+        _speech = speech;
+        Voices = voices;
+        Voices.VoiceChanged += (_, _) => _service.Options.VoiceId = Voices.Selected?.Id;
         _dispatcher = Dispatcher.CurrentDispatcher;
         _service.StatusChanged += (_, _) => _dispatcher.BeginInvoke(UpdateStatus);
         _service.LineTranslated += (_, line) => _dispatcher.BeginInvoke(() => AddSubtitle(line));
-        OpenSpeechSettingsCommand = new RelayCommand(() =>
-            Process.Start(new ProcessStartInfo("ms-settings:speech") { UseShellExecute = true }));
         OpenCreditsCommand = new RelayCommand(() =>
         {
             if (File.Exists(_service.Library.CreditsPath))
@@ -44,10 +45,13 @@ public sealed class LiveTranslateViewModel : ObservableObject, IDisposable
     public event EventHandler? SettingsChanged;
 
     public IReadOnlyList<Language> SourceLanguages { get; } = [Languages.Auto, .. Languages.All];
-    public IReadOnlyList<Language> TargetLanguages { get; } = Languages.All;
-    public ObservableCollection<TtsVoice> Voices { get; } = [];
+
+    /// <summary>Languages translations can be spoken in (those with a speech model installed).</summary>
+    public IReadOnlyList<Language> TargetLanguages =>
+        Languages.All.Where(l => _speech.FindLanguage(l.Whisper) != null).ToList() is { Count: > 0 } spoken ? spoken : Languages.All;
+
+    public SpeechVoicesViewModel Voices { get; }
     public ObservableCollection<SubtitleLine> Subtitles { get; } = [];
-    public ICommand OpenSpeechSettingsCommand { get; }
     public ICommand OpenCreditsCommand { get; }
     public ICommand ClearCommand { get; }
     public string ModelFolder => _service.Library.Root;
@@ -81,24 +85,13 @@ public sealed class LiveTranslateViewModel : ObservableObject, IDisposable
         {
             if (!SetField(ref _to, value ?? Languages.All[0])) return;
             _service.Options.To = _to.Whisper;
-            RefreshVoices(null);
+            OnPropertyChanged(nameof(NoVoiceForTarget));
             SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
-    /// <summary>Windows voice that speaks the translation (filtered to the target language).</summary>
-    public TtsVoice? Voice
-    {
-        get => _voice;
-        set
-        {
-            if (!SetField(ref _voice, value)) return;
-            _service.Options.VoiceId = value?.Id;
-            SettingsChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    public bool NoVoiceForTarget => Voices.Count == 0;
+    /// <summary>True when translations into the target language can only be shown as text.</summary>
+    public bool NoVoiceForTarget => _speech.FindLanguage(_to.Whisper) == null;
 
     /// <summary>Keep your real voice quietly under the translation instead of muting it.</summary>
     public bool KeepOriginal
@@ -123,18 +116,18 @@ public sealed class LiveTranslateViewModel : ObservableObject, IDisposable
 
     public string FromCode => _from.Whisper;
     public string ToCode => _to.Whisper;
-    public string? VoiceId => _voice?.Id;
 
-    public void Initialize(bool enabled, string? from, string? to, string? voiceId, bool keepOriginal)
+    public void Initialize(bool enabled, string? from, string? to, bool keepOriginal)
     {
         _from = SourceLanguages.FirstOrDefault(l => l.Whisper == from) ?? Languages.Auto;
-        _to = TargetLanguages.FirstOrDefault(l => l.Whisper == to) ?? Languages.All[0];
+        _to = TargetLanguages.FirstOrDefault(l => l.Whisper == to) ?? TargetLanguages[0];
         _keepOriginal = keepOriginal;
         _service.Options.From = _from.Whisper;
         _service.Options.To = _to.Whisper;
         _service.Options.KeepOriginal = keepOriginal;
-        RefreshVoices(voiceId);
-        foreach (var name in new[] { nameof(From), nameof(To), nameof(KeepOriginal), nameof(ModelsInstalled) }) OnPropertyChanged(name);
+        _service.Options.VoiceId = Voices.Selected?.Id;
+        foreach (var name in new[] { nameof(From), nameof(To), nameof(TargetLanguages), nameof(NoVoiceForTarget), nameof(KeepOriginal), nameof(ModelsInstalled) })
+            OnPropertyChanged(name);
         UpdateStatus();
         if (enabled && ModelsInstalled) _ = SetEnabledAsync(true);
     }
@@ -158,22 +151,6 @@ public sealed class LiveTranslateViewModel : ObservableObject, IDisposable
             UpdateStatus();
             SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    private void RefreshVoices(string? preferredId)
-    {
-        string primary = _to.Voice.Split('-')[0];
-        var matching = WindowsTts.InstalledVoices()
-            .Where(v => v.Language.Split('-')[0].Equals(primary, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        Voices.Clear();
-        foreach (var v in matching) Voices.Add(v);
-        _voice = Voices.FirstOrDefault(v => v.Id == preferredId)
-            ?? Voices.FirstOrDefault(v => v.Language.Equals(_to.Voice, StringComparison.OrdinalIgnoreCase))
-            ?? Voices.FirstOrDefault();
-        _service.Options.VoiceId = _voice?.Id;
-        OnPropertyChanged(nameof(Voice));
-        OnPropertyChanged(nameof(NoVoiceForTarget));
     }
 
     private void AddSubtitle(TranslatedLine line)

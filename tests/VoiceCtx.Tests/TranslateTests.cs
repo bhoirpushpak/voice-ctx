@@ -94,7 +94,8 @@ public sealed class RequiresTranslateModelsFact : FactAttribute
     public RequiresTranslateModelsFact()
     {
         if (!new TranslateLibrary(TranslateLibrary.DefaultRoot).Installed) Skip = "Live translate models not installed";
-        else if (WindowsTts.InstalledVoices().Count == 0) Skip = "No Windows voices to generate test speech";
+        else if (TestSpeech.EnglishVoice() == null) Skip = "No English Windows voice to generate test speech";
+        else if (!new SpeechLibrary(SpeechLibrary.DefaultRoot).ScanLanguages().Any(l => l.Code == "hi")) Skip = "Hindi speech model not installed";
     }
 }
 
@@ -116,15 +117,16 @@ public class LiveTranslateIntegrationTests
     }
 
     [RequiresTranslateModelsFact]
-    public async Task SpokenEnglishIsTranslatedIntoSpanish()
+    public async Task SpokenEnglishIsSpokenBackInHindi()
     {
-        var english = WindowsTts.InstalledVoices().First(v => v.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase));
-        var clip = await new WindowsTts().SynthesizeAsync("Hello everyone, I will be back in five minutes.", english.Id);
+        var clip = await TestSpeech.SpeakEnglishAsync("Hello everyone, I will be back in five minutes.");
 
         var injector = new SpeechInjector();
-        using var service = new LiveTranslateService(Library, injector);
+        using var speech = new SpeechService(new SpeechLibrary(SpeechLibrary.DefaultRoot));
+        using var service = new LiveTranslateService(Library, injector, speech);
         service.Options.From = "auto";
-        service.Options.To = "es";
+        service.Options.To = "hi";
+        service.Options.VoiceId = speech.Voices.First(v => v.BuiltIn).Id;
         var lines = new List<TranslatedLine>();
         service.LineTranslated += (_, line) => { lock (lines) lines.Add(line); };
 
@@ -151,10 +153,32 @@ public class LiveTranslateIntegrationTests
         TranslatedLine line;
         lock (lines) line = Assert.Single(lines);
         Assert.Equal("English", line.FromLanguage);
-        Assert.Contains("cinco minutos", line.Translation, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("पांच मिनट", line.Translation);
+        Assert.True(injector.IsSpeaking, "the Hindi translation should be queued to speak");
         Assert.True(line.Elapsed < TimeSpan.FromSeconds(5), $"translation took {line.Elapsed.TotalSeconds:F1} s");
 
         await service.SetEnabledAsync(false);
         Assert.Equal(1f, injector.BaseMicGain);
+    }
+}
+
+/// <summary>Test-only English speech (Windows voices) to feed Live translate like a microphone.</summary>
+internal static class TestSpeech
+{
+    public static Windows.Media.SpeechSynthesis.VoiceInformation? EnglishVoice() =>
+        Windows.Media.SpeechSynthesis.SpeechSynthesizer.AllVoices.FirstOrDefault(v => v.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase));
+
+    public static async Task<SpeechClip> SpeakEnglishAsync(string text)
+    {
+        using var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer { Voice = EnglishVoice() };
+        using var stream = await synth.SynthesizeTextToStreamAsync(text);
+        var bytes = new byte[stream.Size];
+        using (var reader = new Windows.Storage.Streams.DataReader(stream.GetInputStreamAt(0)))
+        {
+            await reader.LoadAsync((uint)stream.Size);
+            reader.ReadBytes(bytes);
+        }
+        var (samples, rate) = WavDecoder.DecodeMono(bytes);
+        return new SpeechClip(samples, rate, text);
     }
 }
