@@ -23,6 +23,12 @@ from pathlib import Path
 
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
+# pocket-tts reads its language configs (accented characters) with the default encoding, which is
+# not UTF-8 on Windows: restart in Python's UTF-8 mode.
+if __name__ == "__main__" and not sys.flags.utf8_mode:
+    import subprocess
+    sys.exit(subprocess.call([sys.executable, "-X", "utf8", *sys.argv]))
+
 from huggingface_hub import hf_hub_download  # noqa: E402
 
 KYUTAI = {

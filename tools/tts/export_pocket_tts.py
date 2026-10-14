@@ -243,6 +243,9 @@ class MimiDecoder(nn.Module):
 
 def export_all(model: TTSModel, out: Path, keep_fp32: bool = False):
     out.mkdir(parents=True, exist_ok=True)
+    # pocket-tts caches the encoder's causal mask globally. A mask cached by an earlier export would be
+    # traced as a fixed-size constant (breaking audio prompts longer than the dummy input), so start empty.
+    attention_module._CAUSAL_MASK_CACHE.clear()
     _export(TextConditioner(model), (torch.tensor([[10, 20, 30]]),), out / "text_conditioner.onnx",
             ["token_ids"], ["embeddings"], {"token_ids": {1: "text_len"}, "embeddings": {1: "text_len"}})
 
